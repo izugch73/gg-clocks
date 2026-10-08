@@ -1,0 +1,47 @@
+---
+import type { ClockOptions } from "../../lib/options";
+import DigitalSimple from "./DigitalSimple.astro";
+import AnalogMinimal from "./AnalogMinimal.astro";
+import DigitalLED from "./DigitalLED.astro";
+import Sticker from "./Sticker.astro";
+import NeonGlow from "./NeonGlow.astro";
+import Pixel from "./Pixel.astro";
+import AnalogClassic from "./AnalogClassic.astro";
+import PopSticker from "./PopSticker.astro";
+import GlassFrost from "./GlassFrost.astro";
+import LedDotMatrix from "./LedDotMatrix.astro";
+import AnalogRoman from "./AnalogRoman.astro";
+import Chip from "./Chip.astro";
+import Terminal from "./Terminal.astro";
+import Cassette from "./Cassette.astro";
+import AnalogDot from "./AnalogDot.astro";
+import SubtitleBar from "./SubtitleBar.astro";
+import MonoStack from "./MonoStack.astro";
+import Bracket from "./Bracket.astro";
+import OutlineNumber from "./OutlineNumber.astro";
+import MiniTag from "./MiniTag.astro";
+
+type Props = { slug: string; opts: ClockOptions };
+const { slug, opts } = Astro.props;
+---
+
+{slug === "digital-simple" && <DigitalSimple opts={opts} />}
+{slug === "analog-minimal" && <AnalogMinimal opts={opts} />}
+{slug === "digital-led" && <DigitalLED opts={opts} />}
+{slug === "sticker" && <Sticker opts={opts} />}
+{slug === "neon-glow" && <NeonGlow opts={opts} />}
+{slug === "pixel" && <Pixel opts={opts} />}
+{slug === "analog-classic" && <AnalogClassic opts={opts} />}
+{slug === "pop-sticker" && <PopSticker opts={opts} />}
+{slug === "glass-frost" && <GlassFrost opts={opts} />}
+{slug === "led-dot-matrix" && <LedDotMatrix opts={opts} />}
+{slug === "analog-roman" && <AnalogRoman opts={opts} />}
+{slug === "chip" && <Chip opts={opts} />}
+{slug === "terminal" && <Terminal opts={opts} />}
+{slug === "cassette" && <Cassette opts={opts} />}
+{slug === "analog-dot" && <AnalogDot opts={opts} />}
+{slug === "subtitle-bar" && <SubtitleBar opts={opts} />}
+{slug === "mono-stack" && <MonoStack opts={opts} />}
+{slug === "bracket" && <Bracket opts={opts} />}
+{slug === "outline-number" && <OutlineNumber opts={opts} />}
+{slug === "mini-tag" && <MiniTag opts={opts} />}

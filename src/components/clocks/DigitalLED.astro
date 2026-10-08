@@ -1,0 +1,129 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="led"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+  <div class="date" hidden={!opts.date}>--/-- ---</div>
+</div>
+
+<style>
+  .led {
+    font-family: "Share Tech Mono", "Consolas", "Menlo", monospace;
+    color: var(--fg);
+    background: var(--bg, transparent);
+    border-radius: 10px;
+    text-shadow:
+      0 0 4px var(--accent, var(--fg)),
+      0 0 14px color-mix(in srgb, var(--accent, var(--fg)) 60%, transparent),
+      0 0 28px color-mix(in srgb, var(--accent, var(--fg)) 35%, transparent);
+    padding: 10px 18px;
+    text-align: center;
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .time {
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: 4px;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .sec {
+    font-size: 28px;
+    opacity: 0.85;
+  }
+  .date {
+    margin-top: 6px;
+    font-size: 18px;
+    letter-spacing: 6px;
+    opacity: 0.85;
+  }
+</style>
+
+<script>
+  type Lang = "ja" | "en";
+
+  function partsFor(tz: string) {
+    const f = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      weekday: "short",
+    });
+    return Object.fromEntries(f.formatToParts(new Date()).map((p) => [p.type, p.value])) as Record<
+      string,
+      string
+    >;
+  }
+
+  function wd(en: string | undefined, lang: Lang): string {
+    if (lang === "en") return en ?? "";
+    switch (en) {
+      case "Sun":
+        return "日";
+      case "Mon":
+        return "月";
+      case "Tue":
+        return "火";
+      case "Wed":
+        return "水";
+      case "Thu":
+        return "木";
+      case "Fri":
+        return "金";
+      case "Sat":
+        return "土";
+      default:
+        return "";
+    }
+  }
+
+  function init(el: HTMLElement) {
+    const tz = el.dataset.tz || "Asia/Tokyo";
+    const lang = (el.dataset.lang as Lang) || "ja";
+    const format = el.dataset.format || "24";
+    const showSeconds = el.dataset.seconds === "1";
+    const showDate = el.dataset.date === "1";
+    const hmEl = el.querySelector<HTMLElement>(".hm");
+    const secEl = el.querySelector<HTMLElement>(".sec");
+    const dateEl = el.querySelector<HTMLElement>(".date");
+    if (!hmEl) return;
+
+    function tick() {
+      const p = partsFor(tz);
+      let hour = p.hour;
+      let ampm = "";
+      if (format === "12") {
+        const h = Number(hour);
+        const h12 = ((h + 11) % 12) + 1;
+        hour = String(h12).padStart(2, "0");
+        ampm = h >= 12 ? " PM" : " AM";
+      }
+      if (hmEl) hmEl.textContent = `${hour}:${p.minute}${ampm}`;
+      if (showSeconds && secEl) secEl.textContent = p.second ?? "";
+      if (showDate && dateEl) dateEl.textContent = `${p.month}/${p.day} ${wd(p.weekday, lang)}`;
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>(".led")) init(el);
+</script>

@@ -1,0 +1,82 @@
+---
+import Embed from "../../layouts/Embed.astro";
+import ClockSwitch from "../../components/clocks/ClockSwitch.astro";
+import { CLOCKS, findClock } from "../../data/clocks";
+import { DEFAULTS } from "../../lib/options";
+
+export function getStaticPaths() {
+  return CLOCKS.map((c) => ({ params: { slug: c.slug } }));
+}
+
+const { slug } = Astro.params;
+const meta = findClock(slug);
+if (!meta) return Astro.redirect("/");
+
+const opts = { ...DEFAULTS, ...meta.defaults };
+---
+
+<Embed title={`${meta.name} | embed`}>
+  <ClockSwitch slug={meta.slug} opts={opts} />
+</Embed>
+
+<script is:inline>
+  (function applyUrlOverrides() {
+    const params = new URLSearchParams(location.search);
+    if ([...params.keys()].length === 0) return;
+    const HEX = /^[0-9a-fA-F]{3,8}$/;
+    function color(raw) {
+      if (!raw) return null;
+      const v = raw.trim();
+      if (v === "transparent" || v === "none") return "transparent";
+      if (v.startsWith("#")) return HEX.test(v.slice(1)) ? v : null;
+      if (HEX.test(v)) return "#" + v;
+      if (/^(rgb|hsl)a?\(/.test(v)) return v;
+      return null;
+    }
+    function bool(raw) {
+      if (raw == null) return null;
+      const v = raw.toLowerCase();
+      if (["1", "true", "yes"].includes(v)) return true;
+      if (["0", "false", "no"].includes(v)) return false;
+      return null;
+    }
+    const ROOTS =
+      ".di,.sb,.ms,.br,.on,.mt,.st,.ps,.gf,.ch,.led,.ng,.tm,.px,.dm,.cs,.am,.ac,.ar,.ad";
+    const el = document.querySelector(ROOTS);
+    if (!el) return;
+    const liveEl = el.querySelector(".live");
+    const dateEl = el.querySelector(".date");
+    const secEl = el.querySelector(".sec");
+
+    const fg = color(params.get("fg"));
+    const bg = color(params.get("bg"));
+    const accent = color(params.get("accent"));
+    const scale = parseFloat(params.get("scale"));
+    if (fg) el.style.setProperty("--fg", fg);
+    if (accent) el.style.setProperty("--accent", accent);
+    if (bg) el.style.setProperty("--bg", bg);
+    if (Number.isFinite(scale)) el.style.setProperty("--scale", String(Math.min(4, Math.max(0.5, scale))));
+
+    const fmt = params.get("format");
+    if (fmt === "12" || fmt === "24") el.dataset.format = fmt;
+    const sec = bool(params.get("seconds"));
+    if (sec != null) {
+      el.dataset.seconds = sec ? "1" : "0";
+      if (secEl) secEl.hidden = !sec;
+    }
+    const dt = bool(params.get("date"));
+    if (dt != null) {
+      el.dataset.date = dt ? "1" : "0";
+      if (dateEl) dateEl.hidden = !dt;
+    }
+    const lv = bool(params.get("live"));
+    if (lv != null) {
+      el.dataset.live = lv ? "1" : "0";
+      if (liveEl) liveEl.hidden = !lv;
+    }
+    const tz = params.get("tz");
+    if (tz) el.dataset.tz = tz;
+    const lang = params.get("lang");
+    if (lang === "ja" || lang === "en") el.dataset.lang = lang;
+  })();
+</script>

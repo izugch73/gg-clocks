@@ -1,0 +1,190 @@
+---
+import Site from "../layouts/Site.astro";
+---
+
+<Site
+  title="使い方 | じじいの時計置き場"
+  description="OBSのブラウザソースに時計のURLを貼って配信画面に表示する手順。"
+>
+  <h2>使い方</h2>
+  <p class="lead">
+    OBS Studio で「ブラウザ」ソースを追加して、このサイトの URL を貼るだけです。
+  </p>
+
+  <article class="usage-doc">
+    <section>
+      <h3>1. 好きな時計を選ぶ</h3>
+      <p>
+        <a href="/">時計一覧</a>から好きなデザインを選びます。詳細ページに進むと、色やサイズをカスタマイズできます。
+      </p>
+    </section>
+
+    <section>
+      <h3>2. 色やサイズを調整する（任意）</h3>
+      <p>
+        詳細ページのフォームで文字色・背景色・スケール・タイムゾーンなどを変更できます。プレビューが即時更新されます。デフォルトのままでよければスキップしてOK。
+      </p>
+    </section>
+
+    <section>
+      <h3>3. URLをコピー</h3>
+      <p>
+        プレビュー右下の「コピー」ボタンを押すと、現在の設定が反映された URL がクリップボードにコピーされます。
+      </p>
+    </section>
+
+    <section>
+      <h3>4. OBSにブラウザソースを追加</h3>
+      <ol>
+        <li>OBS で「ソース」パネルの <kbd>+</kbd> を押す</li>
+        <li>「ブラウザ」を選ぶ</li>
+        <li>名前を適当に付けて「OK」</li>
+        <li>「URL」欄にコピーした URL を貼り付け</li>
+        <li>「幅」「高さ」を時計の詳細ページに書いてある「推奨サイズ」に合わせる</li>
+        <li>「OK」で確定</li>
+      </ol>
+    </section>
+
+    <section>
+      <h3>5. 配置・サイズ調整</h3>
+      <p>
+        OBS のプレビュー上で、表示された時計をドラッグして好きな位置に動かせます。角をドラッグすればサイズも変更できます。
+      </p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h3>背景は透過するの？</h3>
+      <p>
+        多くの時計はデフォルトで背景が透過設定です。OBS のブラウザソースは初期状態で透過に対応しているので、特別な設定は不要です。
+      </p>
+      <p>
+        もし背景が白く出てしまう場合は、ブラウザソースのプロパティで「ページのCSSをカスタマイズ」欄を空にすると直ります。
+      </p>
+    </section>
+
+    <section>
+      <h3>時計がチカチカする・止まる</h3>
+      <p>
+        ブラウザソースの「シーンがアクティブになったときにブラウザを再読み込み」をオフにすると、シーン切替時のリロードがなくなります。配信中ずっと開きっぱなしで動かしたい場合はオフ推奨。
+      </p>
+    </section>
+
+    <section>
+      <h3>サイズ感の目安</h3>
+      <ul>
+        <li>テロップ・ミニマル系: 幅 380px × 高さ 44px くらい（画面下端や上端に細く貼る）</li>
+        <li>カード・ポップ系: 幅 220px × 高さ 150px くらい（隅に小さく貼る）</li>
+        <li>ダーク・グロー系: 幅 300px × 高さ 130px くらい</li>
+        <li>アナログ系: 幅 220px × 高さ 220px の正方形</li>
+      </ul>
+      <p>各時計の詳細ページに推奨サイズが書いてあるので、そちらを優先してください。</p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h3>URL パラメータでのカスタマイズ（上級者向け）</h3>
+      <p>
+        URL の末尾に <code>?key=value&amp;...</code> 形式でパラメータを足すと、フォームを開かなくても直接カスタマイズできます。
+      </p>
+      <table class="params">
+        <thead>
+          <tr><th>キー</th><th>値の例</th><th>意味</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>fg</code></td><td><code>%23ff3355</code> など</td><td>文字色（# は <code>%23</code> にエンコード）</td></tr>
+          <tr><td><code>bg</code></td><td><code>%23000000</code> / <code>transparent</code></td><td>背景色</td></tr>
+          <tr><td><code>accent</code></td><td><code>%2316ff7c</code></td><td>アクセント色（LIVEバッジや秒針など）</td></tr>
+          <tr><td><code>scale</code></td><td><code>1.5</code></td><td>全体倍率（0.5〜4）</td></tr>
+          <tr><td><code>tz</code></td><td><code>Asia/Tokyo</code></td><td>タイムゾーン</td></tr>
+          <tr><td><code>lang</code></td><td><code>ja</code> / <code>en</code></td><td>曜日表記の言語</td></tr>
+          <tr><td><code>format</code></td><td><code>24</code> / <code>12</code></td><td>24時間 or 12時間</td></tr>
+          <tr><td><code>seconds</code></td><td><code>0</code> / <code>1</code></td><td>秒を表示するか</td></tr>
+          <tr><td><code>date</code></td><td><code>0</code> / <code>1</code></td><td>日付を表示するか</td></tr>
+          <tr><td><code>live</code></td><td><code>0</code> / <code>1</code></td><td>LIVEバッジを表示するか</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h3>うまく動かない時</h3>
+      <ul>
+        <li>OBS のブラウザソースは Chromium ベースです。最新版なら問題ないですが、古い OS で OBS が古いままだと動かないことがあります。</li>
+        <li>時刻はあなたの PC の時計を参照します。NTP同期がずれているとそのままズレた時刻が出ます。</li>
+        <li>URL がコピーできない場合は、入力欄を選択して手動でコピーしてください。</li>
+      </ul>
+    </section>
+  </article>
+</Site>
+
+<style>
+  .usage-doc {
+    max-width: 720px;
+  }
+  .usage-doc section {
+    margin: 28px 0;
+  }
+  .usage-doc h3 {
+    font-size: 17px;
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .usage-doc p {
+    margin: 0 0 10px;
+  }
+  .usage-doc ol,
+  .usage-doc ul {
+    margin: 0;
+    padding-left: 22px;
+  }
+  .usage-doc li {
+    margin-bottom: 4px;
+  }
+  .usage-doc hr {
+    margin: 40px 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .usage-doc kbd {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+  }
+  .usage-doc code {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+  }
+  .usage-doc table.params {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  .usage-doc table.params th,
+  .usage-doc table.params td {
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .usage-doc table.params th {
+    background: var(--card);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .usage-doc table.params td:first-child {
+    white-space: nowrap;
+  }
+</style>

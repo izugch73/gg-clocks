@@ -1,0 +1,133 @@
+---
+import "../styles/site.css";
+type Props = { title: string; description?: string };
+const {
+  title,
+  description = "OBSのブラウザソースに貼るだけで使える時計を置いてある場所。じじいが自分用に作りました。",
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+const ogImage = new URL("/og.png", Astro.site).toString();
+---
+
+<!doctype html>
+<html lang="ja" data-preview-bg="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta
+      name="google-site-verification"
+      content="cP7sgbWrdkga9EoDcCpzwCjUMQKXFYl9BEBrKJC1mmE"
+    />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {/* Open Graph */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="じじいの時計置き場" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="ja_JP" />
+    {/* Twitter */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    {/* Google Analytics (gtag.js) */}
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-494GVE12W9"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag("js", new Date());
+      gtag("config", "G-494GVE12W9");
+    </script>
+    <script is:inline>
+      // Restore preview-bg preference before paint to avoid FOUC.
+      (function () {
+        try {
+          var v = localStorage.getItem("mcclock.previewBg");
+          if (v !== "light" && v !== "dark") v = "light";
+          document.documentElement.dataset.previewBg = v;
+        } catch (e) {
+          document.documentElement.dataset.previewBg = "light";
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site">
+      <div class="container">
+        <h1>
+          <a href="/" style="text-decoration:none">
+            じじいの時計置き場
+            <small style="color:var(--muted);font-size:12px;font-weight:400;margin-left:6px;">— OBS用</small>
+          </a>
+        </h1>
+        <div class="right">
+          <div class="bg-toggle" id="bg-toggle" aria-label="プレビュー背景の切替">
+            <button type="button" data-value="light" aria-pressed="true" title="白ベースの配信画面用">
+              <span class="swatch light" aria-hidden="true"></span>白ベース
+            </button>
+            <button type="button" data-value="dark" aria-pressed="false" title="黒ベースの配信画面用">
+              <span class="swatch dark" aria-hidden="true"></span>黒ベース
+            </button>
+          </div>
+          <nav>
+            <a href="/">時計一覧</a>
+            <a href="/usage/">使い方</a>
+            <a href="/terms/">利用規約</a>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <main class="container" style="padding-top:32px;padding-bottom:48px;">
+      <slot />
+    </main>
+    <footer class="site">
+      <div class="container">
+        <div>じじいの時計置き場 — OBSのブラウザソースに貼るだけで使える時計を置いてあります。</div>
+        <div style="margin-top:6px;">
+          完全無料・登録不要 / <a href="/terms/" style="color:inherit;">利用規約</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const KEY = "mcclock.previewBg";
+      const valid = ["light", "dark"] as const;
+      type Bg = (typeof valid)[number];
+
+      function apply(v: Bg) {
+        document.documentElement.dataset.previewBg = v;
+        const btns = document.querySelectorAll<HTMLButtonElement>("#bg-toggle [data-value]");
+        for (const b of btns) {
+          b.setAttribute("aria-pressed", String(b.dataset.value === v));
+        }
+        const frames = document.querySelectorAll<HTMLIFrameElement>("iframe[data-src-light]");
+        for (const f of frames) {
+          const next = v === "dark" ? f.dataset.srcDark : f.dataset.srcLight;
+          if (next && f.getAttribute("src") !== next) f.setAttribute("src", next);
+        }
+      }
+
+      const saved = (localStorage.getItem(KEY) as Bg | null) ?? "light";
+      apply(valid.includes(saved) ? saved : "light");
+
+      for (const b of document.querySelectorAll<HTMLButtonElement>("#bg-toggle [data-value]")) {
+        b.addEventListener("click", () => {
+          const v = b.dataset.value as Bg;
+          try {
+            localStorage.setItem(KEY, v);
+          } catch {
+            /* ignore quota / private mode errors */
+          }
+          apply(v);
+        });
+      }
+    </script>
+  </body>
+</html>

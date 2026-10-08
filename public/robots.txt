@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /*/embed/
+Disallow: /*/embed
+
+Sitemap: https://clocks.thegg.jp/sitemap-index.xml

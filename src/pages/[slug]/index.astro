@@ -1,0 +1,245 @@
+---
+import Site from "../../layouts/Site.astro";
+import { CLOCKS, findClock } from "../../data/clocks";
+import { DEFAULTS } from "../../lib/options";
+
+export function getStaticPaths() {
+  return CLOCKS.map((c) => ({ params: { slug: c.slug } }));
+}
+
+const { slug } = Astro.params;
+const meta = findClock(slug);
+if (!meta) return Astro.redirect("/");
+
+const opts = { ...DEFAULTS, ...meta.defaults };
+const embedPath = `/${meta.slug}/embed`;
+---
+
+<Site title={`${meta.name} | じじいの時計置き場`} description={meta.tagline}>
+  <p style="margin:0 0 8px;color:var(--muted);font-size:13px;">
+    <a href="/" style="color:inherit;text-decoration:none;">← 時計一覧へ</a>
+  </p>
+  <h2>{meta.name}</h2>
+  <p class="lead">{meta.tagline}</p>
+
+  <div class="detail">
+    <section
+      class="form"
+      id="customizer"
+      data-slug={meta.slug}
+      data-embed-path={embedPath}
+      data-defaults={JSON.stringify(opts)}
+      data-dark-variant={JSON.stringify(meta.darkVariant ?? {})}
+    >
+      <div class="group">
+        <div class="group-title">色</div>
+        <div class="color-row">
+          <label for="opt-fg">文字色</label>
+          <input type="color" id="opt-fg" value={opts.fg.startsWith("#") ? opts.fg.slice(0, 7) : "#000000"} />
+          <input type="text" id="opt-fg-text" value={opts.fg} />
+        </div>
+        <div class="color-row">
+          <label for="opt-accent">アクセント色</label>
+          <input type="color" id="opt-accent" value={opts.accent.startsWith("#") ? opts.accent.slice(0, 7) : "#000000"} />
+          <input type="text" id="opt-accent-text" value={opts.accent} />
+        </div>
+        <div class="row">
+          <label for="opt-bg">背景</label>
+          <select id="opt-bg">
+            <option value="transparent" selected={opts.bg === "transparent"}>透過</option>
+            <option value="#ffffffb3" selected={opts.bg === "#ffffffb3"}>半透明 白</option>
+            <option value="#000000b3" selected={opts.bg === "#000000b3"}>半透明 黒</option>
+            <option value="#ffffff" selected={opts.bg === "#ffffff"}>白</option>
+            <option value="#000000" selected={opts.bg === "#000000"}>黒</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">その他</div>
+        <div class="row">
+          <label for="opt-scale">スケール</label>
+          <input type="number" id="opt-scale" min="0.5" max="4" step="0.1" value={opts.scale} />
+        </div>
+        <div class="row">
+          <label for="opt-tz">タイムゾーン</label>
+          <input type="text" id="opt-tz" value={opts.tz} />
+        </div>
+        <div class="row">
+          <label for="opt-lang">言語</label>
+          <select id="opt-lang">
+            <option value="ja" selected={opts.lang === "ja"}>日本語</option>
+            <option value="en" selected={opts.lang === "en"}>English</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <aside class="preview-wrap">
+      <div class="preview">
+        <iframe id="preview" src={embedPath} title="preview"></iframe>
+      </div>
+      <div class="url-box">
+        <input type="text" id="url-out" readonly />
+        <button type="button" id="copy-btn">コピー</button>
+      </div>
+      <p style="color:var(--muted);font-size:12px;margin-top:8px;">
+        推奨サイズ: 幅 {meta.recommendedSize.width}px × 高さ {meta.recommendedSize.height}px
+      </p>
+
+      <p style="color:var(--muted);font-size:13px;margin-top:14px;">
+        OBSでの貼り方は <a href="/usage/" style="color:inherit;">使い方ページ</a> へ。
+      </p>
+    </aside>
+  </div>
+</Site>
+
+<script>
+  type Defaults = {
+    fg: string; bg: string; accent: string;
+    format: "24" | "12"; seconds: boolean; date: boolean; live: boolean;
+    tz: string; lang: "ja" | "en"; scale: number;
+  };
+
+  const wrap = document.getElementById("customizer");
+  if (wrap) {
+    const embedPath = wrap.dataset.embedPath ?? "/";
+    const defaults: Defaults = JSON.parse(wrap.dataset.defaults ?? "{}");
+    const darkVariant: Partial<Defaults> = JSON.parse(wrap.dataset.darkVariant ?? "{}");
+    const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+    const fg = $<HTMLInputElement>("opt-fg");
+    const fgText = $<HTMLInputElement>("opt-fg-text");
+    const accent = $<HTMLInputElement>("opt-accent");
+    const accentText = $<HTMLInputElement>("opt-accent-text");
+    const bg = $<HTMLSelectElement>("opt-bg");
+    const scale = $<HTMLInputElement>("opt-scale");
+    const tz = $<HTMLInputElement>("opt-tz");
+    const lang = $<HTMLSelectElement>("opt-lang");
+
+    const preview = $<HTMLIFrameElement>("preview");
+    const urlOut = $<HTMLInputElement>("url-out");
+    const copyBtn = $<HTMLButtonElement>("copy-btn");
+
+    /* Make sure variant bg values not in the predefined <option>s are still selectable. */
+    function ensureBgOption(value: string) {
+      if (!bg || !value) return;
+      for (const opt of Array.from(bg.options)) if (opt.value === value) return;
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = "（自動設定）";
+      opt.hidden = true;
+      bg.appendChild(opt);
+    }
+    ensureBgOption(defaults.bg);
+    if (darkVariant.bg) ensureBgOption(darkVariant.bg);
+
+    let dirty = false;
+    function markDirty() {
+      dirty = true;
+    }
+
+    function effectiveDefaults(): Defaults {
+      const mode = document.documentElement.dataset.previewBg === "dark" ? "dark" : "light";
+      return mode === "dark" ? { ...defaults, ...darkVariant } : defaults;
+    }
+
+    function syncFormFromDefaults(d: Defaults) {
+      if (fgText) fgText.value = d.fg;
+      if (fg && /^#[0-9a-fA-F]{6}$/.test(d.fg)) fg.value = d.fg;
+      if (accentText) accentText.value = d.accent;
+      if (accent && /^#[0-9a-fA-F]{6}$/.test(d.accent)) accent.value = d.accent;
+      if (bg) bg.value = d.bg;
+      if (scale) scale.value = String(d.scale);
+      if (tz) tz.value = d.tz;
+      if (lang) lang.value = d.lang;
+    }
+
+    function syncFromMode() {
+      syncFormFromDefaults(effectiveDefaults());
+      update();
+    }
+
+    function syncColorPair(text: HTMLInputElement | null, picker: HTMLInputElement | null) {
+      if (!text || !picker) return;
+      text.addEventListener("input", () => {
+        if (/^#[0-9a-fA-F]{6}$/.test(text.value)) picker.value = text.value;
+        markDirty();
+        update();
+      });
+      picker.addEventListener("input", () => {
+        text.value = picker.value;
+        markDirty();
+        update();
+      });
+    }
+    syncColorPair(fgText, fg);
+    syncColorPair(accentText, accent);
+
+    for (const el of [bg, scale, tz, lang]) {
+      el?.addEventListener("input", () => {
+        markDirty();
+        update();
+      });
+      el?.addEventListener("change", () => {
+        markDirty();
+        update();
+      });
+    }
+
+    copyBtn?.addEventListener("click", async () => {
+      if (!urlOut) return;
+      try {
+        await navigator.clipboard.writeText(urlOut.value);
+        copyBtn.textContent = "コピーした！";
+        setTimeout(() => (copyBtn.textContent = "コピー"), 1500);
+      } catch {
+        urlOut.select();
+        document.execCommand("copy");
+      }
+    });
+
+    function currentOpts(): Defaults {
+      return {
+        ...defaults,
+        fg: fgText?.value || defaults.fg,
+        bg: bg?.value || defaults.bg,
+        accent: accentText?.value || defaults.accent,
+        scale: Number(scale?.value || defaults.scale),
+        tz: tz?.value || defaults.tz,
+        lang: (lang?.value as "ja" | "en") || defaults.lang,
+      };
+    }
+
+    function buildQuery(o: Defaults): string {
+      const p = new URLSearchParams();
+      const diff = <K extends keyof Defaults>(k: K, v: string) => {
+        if (String(defaults[k]) !== String(o[k])) p.set(k, v);
+      };
+      diff("fg", o.fg);
+      diff("bg", o.bg);
+      diff("accent", o.accent);
+      diff("scale", String(o.scale));
+      diff("tz", o.tz);
+      diff("lang", o.lang);
+      const qs = p.toString();
+      return qs ? `?${qs}` : "";
+    }
+
+    function update() {
+      const o = currentOpts();
+      const qs = buildQuery(o);
+      const rel = embedPath + qs;
+      if (preview && preview.getAttribute("src") !== rel) preview.src = rel;
+      if (urlOut) urlOut.value = new URL(rel, location.href).toString();
+    }
+
+    /* React to the global preview-bg toggle until the user customizes. */
+    const obs = new MutationObserver(() => {
+      if (!dirty) syncFromMode();
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-preview-bg"] });
+
+    syncFromMode();
+  }
+</script>

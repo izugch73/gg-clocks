@@ -1,0 +1,151 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="ps"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="card">
+    <div class="banner">
+      <span class="live" hidden={!opts.live}>● ON AIR</span>
+    </div>
+    <div class="time">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+    <div class="date" hidden={!opts.date}>--/-- ---</div>
+  </div>
+</div>
+
+<style>
+  .ps {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    padding: 8px 10px 14px;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+  .card {
+    position: relative;
+    background: var(--bg);
+    color: var(--fg);
+    border: 4px solid var(--fg);
+    border-radius: 12px;
+    padding: 14px 22px 16px;
+    text-align: center;
+    box-shadow:
+      0 0 0 4px var(--bg),
+      0 0 0 7px var(--fg),
+      6px 8px 0 var(--fg);
+  }
+  /* dotted ring outside card */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: -16px;
+    border-radius: 24px;
+    background-image: radial-gradient(circle, var(--fg) 1.5px, transparent 2px);
+    background-size: 10px 10px;
+    -webkit-mask:
+      linear-gradient(#000, #000) padding-box,
+      linear-gradient(#000, #000);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000, #000) padding-box,
+      linear-gradient(#000, #000);
+    mask-composite: exclude;
+    padding: 4px;
+    pointer-events: none;
+  }
+  .banner {
+    min-height: 18px;
+  }
+  .live {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+  }
+  .time {
+    font-size: 40px;
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .sec {
+    font-size: 22px;
+    font-weight: 700;
+    opacity: 0.7;
+  }
+  .date {
+    margin-top: 2px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+</style>
+
+<script>
+  type Lang = "ja" | "en";
+
+  function partsFor(tz: string) {
+    const f = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour12: false,
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      weekday: "short",
+    });
+    return Object.fromEntries(f.formatToParts(new Date()).map((p) => [p.type, p.value])) as Record<string, string>;
+  }
+  function wd(en: string | undefined, lang: Lang): string {
+    if (!en) return "";
+    if (lang === "en") return en.toUpperCase();
+    return { Sun: "日", Mon: "月", Tue: "火", Wed: "水", Thu: "木", Fri: "金", Sat: "土" }[en] ?? "";
+  }
+  function init(el: HTMLElement) {
+    const tz = el.dataset.tz || "Asia/Tokyo";
+    const lang = (el.dataset.lang as Lang) || "ja";
+    const format = el.dataset.format || "24";
+    const hmEl = el.querySelector<HTMLElement>(".hm");
+    const secEl = el.querySelector<HTMLElement>(".sec");
+    const dateEl = el.querySelector<HTMLElement>(".date");
+    if (!hmEl) return;
+    function tick() {
+      const p = partsFor(tz);
+      let hour = p.hour;
+      let suffix = "";
+      if (format === "12") {
+        const h = Number(hour);
+        hour = String(((h + 11) % 12) + 1).padStart(2, "0");
+        suffix = h >= 12 ? " PM" : " AM";
+      }
+      if (hmEl) hmEl.textContent = `${hour}:${p.minute}${suffix}`;
+      if (secEl) secEl.textContent = p.second ?? "";
+      if (dateEl) dateEl.textContent = `${p.month}/${p.day} ${wd(p.weekday, lang)}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  for (const el of document.querySelectorAll<HTMLElement>(".ps")) init(el);
+</script>

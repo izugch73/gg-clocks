@@ -1,0 +1,61 @@
+---
+import Site from "../layouts/Site.astro";
+import { CATEGORIES, clocksByCategory, variantQuery } from "../data/clocks";
+---
+
+<Site title="じじいの時計置き場 — OBS用">
+  <h2>じじいの時計置き場</h2>
+  <p class="lead">
+    自分用に作りましたが、好きに使ってください。
+  </p>
+
+  <nav class="toc">
+    {CATEGORIES.map((cat) => (
+      <a href={`#cat-${cat.id}`} class="toc-item">{cat.name}</a>
+    ))}
+  </nav>
+
+  {CATEGORIES.map((cat) => {
+    const items = clocksByCategory(cat.id);
+    if (items.length === 0) return null;
+    return (
+      <section class="chapter" id={`cat-${cat.id}`}>
+        <header class="chapter-head">
+          <h3>{cat.name}</h3>
+          <p class="chapter-desc">{cat.description}</p>
+        </header>
+        <div class="grid">
+          {items.map((c) => {
+            const baseQs = "scale=0.7";
+            const lightSrc = `/${c.slug}/embed?${baseQs}`;
+            const darkParams = variantQuery(c.darkVariant);
+            const darkSrc = darkParams
+              ? `/${c.slug}/embed?${baseQs}&${darkParams}`
+              : lightSrc;
+            return (
+              <a class="card" href={`/${c.slug}/`}>
+                <div class="thumb">
+                  <iframe
+                    src={lightSrc}
+                    data-src-light={lightSrc}
+                    data-src-dark={darkSrc}
+                    title={c.name}
+                    loading="lazy"
+                    tabindex="-1"
+                  ></iframe>
+                </div>
+                <h4>{c.name}</h4>
+                <p>{c.tagline}</p>
+                <div class="tags">{c.tags.map((t) => <span class="tag">{t}</span>)}</div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    );
+  })}
+
+  <p style="margin-top:48px;color:var(--muted);font-size:14px;">
+    OBSでの貼り方や URL パラメータの一覧は <a href="/usage/">使い方ページ</a> を見てください。
+  </p>
+</Site>

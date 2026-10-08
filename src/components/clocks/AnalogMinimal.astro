@@ -1,0 +1,131 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="am"
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-tz={opts.tz}
+  style={`--fg:${opts.fg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+    <circle cx="100" cy="100" r="96" class="ring"></circle>
+    {Array.from({ length: 12 }).map((_, i) => (
+      <line
+        x1="100"
+        y1="14"
+        x2="100"
+        y2={i % 3 === 0 ? 26 : 22}
+        class={i % 3 === 0 ? "tick tick-major" : "tick"}
+        transform={`rotate(${i * 30} 100 100)`}
+      />
+    ))}
+    <g class="hand-h">
+      <line x1="100" y1="110" x2="100" y2="50" class="hand hand-hour" />
+    </g>
+    <g class="hand-m">
+      <line x1="100" y1="115" x2="100" y2="32" class="hand hand-min" />
+    </g>
+    {opts.seconds && (
+      <g class="hand-s">
+        <line x1="100" y1="120" x2="100" y2="28" class="hand hand-sec" />
+      </g>
+    )}
+    <circle cx="100" cy="100" r="5" class="pin"></circle>
+  </svg>
+</div>
+
+<style>
+  .am {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .am svg {
+    display: block;
+  }
+  .ring {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 4;
+    opacity: 0.85;
+  }
+  .tick {
+    stroke: var(--fg);
+    stroke-width: 2;
+    opacity: 0.6;
+  }
+  .tick-major {
+    stroke-width: 4;
+    opacity: 0.95;
+  }
+  .hand {
+    stroke: var(--fg);
+    stroke-linecap: round;
+  }
+  .hand-hour {
+    stroke-width: 6;
+  }
+  .hand-min {
+    stroke-width: 4;
+  }
+  .hand-sec {
+    stroke: var(--accent, var(--fg));
+    stroke-width: 2;
+  }
+  .pin {
+    fill: var(--accent, var(--fg));
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 100px 100px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+</style>
+
+<script>
+  function init(el: HTMLElement) {
+    const tz = el.dataset.tz || "Asia/Tokyo";
+    const showSec = el.dataset.seconds === "1";
+    const h = el.querySelector<SVGGElement>(".hand-h");
+    const m = el.querySelector<SVGGElement>(".hand-m");
+    const s = el.querySelector<SVGGElement>(".hand-s");
+    if (!h || !m) return;
+
+    function readParts() {
+      const f = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      const parts = Object.fromEntries(f.formatToParts(new Date()).map((p) => [p.type, p.value]));
+      return {
+        h: Number(parts.hour),
+        m: Number(parts.minute),
+        s: Number(parts.second),
+      };
+    }
+
+    function tick() {
+      const { h: H, m: M, s: S } = readParts();
+      const hourDeg = (H % 12) * 30 + M * 0.5;
+      const minDeg = M * 6 + S * 0.1;
+      const secDeg = S * 6;
+      if (h) h.style.transform = `rotate(${hourDeg}deg)`;
+      if (m) m.style.transform = `rotate(${minDeg}deg)`;
+      if (s && showSec) s.style.transform = `rotate(${secDeg}deg)`;
+    }
+
+    tick();
+    setInterval(tick, showSec ? 1000 : 15000);
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>(".am")) init(el);
+</script>

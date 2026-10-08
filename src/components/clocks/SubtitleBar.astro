@@ -1,0 +1,134 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="sb"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="bar">
+    <span class="live" hidden={!opts.live}>
+      <span class="dot" aria-hidden="true"></span>LIVE
+    </span>
+    <span class="time">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </span>
+    <span class="bullet" hidden={!opts.date} aria-hidden="true">·</span>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+  </div>
+</div>
+
+<style>
+  .sb {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    color: var(--fg);
+    padding: 2px 4px;
+    background: var(--bg);
+  }
+  .bar {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 0 2px 6px;
+    border-bottom: 2px solid var(--accent);
+    font-weight: 600;
+    line-height: 1;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  }
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    font-weight: 800;
+    color: var(--accent);
+    text-shadow: none;
+  }
+  .live .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: sb-pulse 1.2s ease-in-out infinite;
+  }
+  .time {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .time .sec {
+    font-size: 16px;
+    margin-left: 4px;
+    opacity: 0.7;
+    font-weight: 600;
+  }
+  .bullet {
+    opacity: 0.5;
+  }
+  .date {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.8;
+    font-weight: 600;
+  }
+  @keyframes sb-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+</style>
+
+<script>
+  type Lang = "ja" | "en";
+  function partsFor(tz: string) {
+    const f = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hour12: false,
+      month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      weekday: "short",
+    });
+    return Object.fromEntries(f.formatToParts(new Date()).map((p) => [p.type, p.value])) as Record<string, string>;
+  }
+  function wd(en: string | undefined, lang: Lang): string {
+    if (!en) return "";
+    if (lang === "en") return en.toUpperCase();
+    return { Sun: "日", Mon: "月", Tue: "火", Wed: "水", Thu: "木", Fri: "金", Sat: "土" }[en] ?? "";
+  }
+  function init(el: HTMLElement) {
+    const tz = el.dataset.tz || "Asia/Tokyo";
+    const lang = (el.dataset.lang as Lang) || "ja";
+    const format = el.dataset.format || "24";
+    const hmEl = el.querySelector<HTMLElement>(".hm");
+    const secEl = el.querySelector<HTMLElement>(".sec");
+    const dateEl = el.querySelector<HTMLElement>(".date");
+    if (!hmEl) return;
+    function tick() {
+      const p = partsFor(tz);
+      let hour = p.hour;
+      let suffix = "";
+      if (format === "12") {
+        const h = Number(hour);
+        hour = String(((h + 11) % 12) + 1).padStart(2, "0");
+        suffix = h >= 12 ? " PM" : " AM";
+      }
+      if (hmEl) hmEl.textContent = `${hour}:${p.minute}${suffix}`;
+      if (secEl) secEl.textContent = p.second ?? "";
+      if (dateEl) dateEl.textContent = `${p.month}/${p.day} ${wd(p.weekday, lang)}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+  for (const el of document.querySelectorAll<HTMLElement>(".sb")) init(el);
+</script>

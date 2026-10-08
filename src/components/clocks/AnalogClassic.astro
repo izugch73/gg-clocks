@@ -1,0 +1,165 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="ac"
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-tz={opts.tz}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 220 220" width="220" height="220" aria-hidden="true">
+    <defs>
+      <radialGradient id="ac-highlight" cx="50%" cy="32%">
+        <stop offset="0%" stop-color="white" stop-opacity="0.18" />
+        <stop offset="100%" stop-color="white" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="110" cy="110" r="106" class="bezel-outer"></circle>
+    <circle cx="110" cy="110" r="100" class="face"></circle>
+    <circle cx="110" cy="110" r="100" class="face-highlight" fill="url(#ac-highlight)"></circle>
+
+    {Array.from({ length: 60 }).map((_, i) => (
+      <line
+        x1="110"
+        y1="18"
+        x2="110"
+        y2={i % 5 === 0 ? 28 : 23}
+        class={i % 5 === 0 ? "tick tick-major" : "tick"}
+        transform={`rotate(${i * 6} 110 110)`}
+      />
+    ))}
+
+    {[12, 3, 6, 9].map((n) => {
+      const angle = (n / 12) * Math.PI * 2 - Math.PI / 2;
+      const r = 76;
+      const x = 110 + Math.cos(angle) * r;
+      const y = 110 + Math.sin(angle) * r;
+      return (
+        <text x={x} y={y} class="num" text-anchor="middle" dominant-baseline="central">{n}</text>
+      );
+    })}
+
+    <g class="hand-h">
+      <line x1="110" y1="120" x2="110" y2="55" class="hand hand-hour" />
+    </g>
+    <g class="hand-m">
+      <line x1="110" y1="125" x2="110" y2="35" class="hand hand-min" />
+    </g>
+    {opts.seconds && (
+      <g class="hand-s">
+        <line x1="110" y1="135" x2="110" y2="28" class="hand hand-sec" />
+        <circle cx="110" cy="155" r="3" class="counter" />
+      </g>
+    )}
+    <circle cx="110" cy="110" r="5" class="pin"></circle>
+    <circle cx="110" cy="110" r="2" class="pin-center"></circle>
+  </svg>
+</div>
+
+<style>
+  .ac {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .ac svg {
+    display: block;
+  }
+  .bezel-outer {
+    fill: var(--fg);
+  }
+  .face {
+    fill: var(--bg);
+    stroke: color-mix(in srgb, var(--fg) 25%, transparent);
+    stroke-width: 1.5;
+  }
+  .face-highlight {
+    pointer-events: none;
+  }
+  .tick {
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    opacity: 0.5;
+  }
+  .tick-major {
+    stroke-width: 3;
+    opacity: 0.95;
+  }
+  .num {
+    font-family: "Roboto", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    fill: var(--fg);
+  }
+  .hand {
+    stroke: var(--fg);
+    stroke-linecap: round;
+  }
+  .hand-hour {
+    stroke-width: 6;
+  }
+  .hand-min {
+    stroke-width: 4;
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 1.6;
+  }
+  .pin {
+    fill: var(--fg);
+  }
+  .pin-center {
+    fill: var(--accent);
+  }
+  .counter {
+    fill: var(--accent);
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 110px 110px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+</style>
+
+<script>
+  function init(el: HTMLElement) {
+    const tz = el.dataset.tz || "Asia/Tokyo";
+    const showSec = el.dataset.seconds === "1";
+    const h = el.querySelector<SVGGElement>(".hand-h");
+    const m = el.querySelector<SVGGElement>(".hand-m");
+    const s = el.querySelector<SVGGElement>(".hand-s");
+    if (!h || !m) return;
+
+    function readParts() {
+      const f = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      const parts = Object.fromEntries(f.formatToParts(new Date()).map((p) => [p.type, p.value]));
+      return { h: Number(parts.hour), m: Number(parts.minute), s: Number(parts.second) };
+    }
+
+    function tick() {
+      const { h: H, m: M, s: S } = readParts();
+      const hourDeg = (H % 12) * 30 + M * 0.5;
+      const minDeg = M * 6 + S * 0.1;
+      const secDeg = S * 6;
+      if (h) h.style.transform = `rotate(${hourDeg}deg)`;
+      if (m) m.style.transform = `rotate(${minDeg}deg)`;
+      if (s && showSec) s.style.transform = `rotate(${secDeg}deg)`;
+    }
+    tick();
+    setInterval(tick, showSec ? 1000 : 15000);
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>(".ac")) init(el);
+</script>
