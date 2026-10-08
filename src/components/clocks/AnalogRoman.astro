@@ -44,11 +44,9 @@ const ROMAN = ["XII", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X
     <g class="hand-m">
       <line x1="110" y1="122" x2="110" y2="42" class="hand hand-min" />
     </g>
-    {opts.seconds && (
-      <g class="hand-s">
-        <line x1="110" y1="130" x2="110" y2="32" class="hand hand-sec" />
-      </g>
-    )}
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1="110" y1="130" x2="110" y2="32" class="hand hand-sec" />
+    </g>
     <circle cx="110" cy="110" r="4" class="pin"></circle>
     <circle cx="110" cy="110" r="2" class="pin-center"></circle>
   </svg>
@@ -120,35 +118,6 @@ const ROMAN = ["XII", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X
 </style>
 
 <script>
-  function init(el: HTMLElement) {
-    const tz = el.dataset.tz || "Asia/Tokyo";
-    const showSec = el.dataset.seconds === "1";
-    const h = el.querySelector<SVGGElement>(".hand-h");
-    const m = el.querySelector<SVGGElement>(".hand-m");
-    const s = el.querySelector<SVGGElement>(".hand-s");
-    if (!h || !m) return;
-    function readParts() {
-      const f = new Intl.DateTimeFormat("en-US", {
-        timeZone: tz,
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-      const parts = Object.fromEntries(f.formatToParts(new Date()).map((p) => [p.type, p.value]));
-      return { h: Number(parts.hour), m: Number(parts.minute), s: Number(parts.second) };
-    }
-    function tick() {
-      const { h: H, m: M, s: S } = readParts();
-      const hourDeg = (H % 12) * 30 + M * 0.5;
-      const minDeg = M * 6 + S * 0.1;
-      const secDeg = S * 6;
-      if (h) h.style.transform = `rotate(${hourDeg}deg)`;
-      if (m) m.style.transform = `rotate(${minDeg}deg)`;
-      if (s && showSec) s.style.transform = `rotate(${secDeg}deg)`;
-    }
-    tick();
-    setInterval(tick, showSec ? 1000 : 15000);
-  }
-  for (const el of document.querySelectorAll<HTMLElement>(".ar")) init(el);
+  import { mountAnalog } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".ar")) mountAnalog(el);
 </script>

@@ -21,7 +21,7 @@ const { opts } = Astro.props;
     <span class="time">
       <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
     </span>
-    <span class="bullet" hidden={!opts.date} aria-hidden="true">·</span>
+    <span class="bullet" data-with="date" hidden={!opts.date} aria-hidden="true">·</span>
     <span class="date" hidden={!opts.date}>--/-- ---</span>
   </div>
 </div>
@@ -91,44 +91,6 @@ const { opts } = Astro.props;
 </style>
 
 <script>
-  type Lang = "ja" | "en";
-  function partsFor(tz: string) {
-    const f = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz, hour12: false,
-      month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      weekday: "short",
-    });
-    return Object.fromEntries(f.formatToParts(new Date()).map((p) => [p.type, p.value])) as Record<string, string>;
-  }
-  function wd(en: string | undefined, lang: Lang): string {
-    if (!en) return "";
-    if (lang === "en") return en.toUpperCase();
-    return { Sun: "日", Mon: "月", Tue: "火", Wed: "水", Thu: "木", Fri: "金", Sat: "土" }[en] ?? "";
-  }
-  function init(el: HTMLElement) {
-    const tz = el.dataset.tz || "Asia/Tokyo";
-    const lang = (el.dataset.lang as Lang) || "ja";
-    const format = el.dataset.format || "24";
-    const hmEl = el.querySelector<HTMLElement>(".hm");
-    const secEl = el.querySelector<HTMLElement>(".sec");
-    const dateEl = el.querySelector<HTMLElement>(".date");
-    if (!hmEl) return;
-    function tick() {
-      const p = partsFor(tz);
-      let hour = p.hour;
-      let suffix = "";
-      if (format === "12") {
-        const h = Number(hour);
-        hour = String(((h + 11) % 12) + 1).padStart(2, "0");
-        suffix = h >= 12 ? " PM" : " AM";
-      }
-      if (hmEl) hmEl.textContent = `${hour}:${p.minute}${suffix}`;
-      if (secEl) secEl.textContent = p.second ?? "";
-      if (dateEl) dateEl.textContent = `${p.month}/${p.day} ${wd(p.weekday, lang)}`;
-    }
-    tick();
-    setInterval(tick, 1000);
-  }
-  for (const el of document.querySelectorAll<HTMLElement>(".sb")) init(el);
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".sb")) mountDigital(el);
 </script>

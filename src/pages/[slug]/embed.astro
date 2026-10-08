@@ -44,9 +44,14 @@ const opts = { ...DEFAULTS, ...meta.defaults };
       ".di,.sb,.ms,.br,.on,.mt,.st,.ps,.gf,.ch,.led,.ng,.tm,.px,.dm,.cs,.am,.ac,.ar,.ad";
     const el = document.querySelector(ROOTS);
     if (!el) return;
-    const liveEl = el.querySelector(".live");
-    const dateEl = el.querySelector(".date");
-    const secEl = el.querySelector(".sec");
+    // Toggle the main element plus any decoration tied to it (separators,
+    // rules, bullets) that components mark with data-with="date|live|sec".
+    function setShown(name, shown) {
+      for (const node of el.querySelectorAll("." + name + ', [data-with="' + name + '"]')) {
+        // toggleAttribute works for SVG elements too (they have no `hidden` IDL property).
+        node.toggleAttribute("hidden", !shown);
+      }
+    }
 
     const fg = color(params.get("fg"));
     const bg = color(params.get("bg"));
@@ -62,20 +67,20 @@ const opts = { ...DEFAULTS, ...meta.defaults };
     const sec = bool(params.get("seconds"));
     if (sec != null) {
       el.dataset.seconds = sec ? "1" : "0";
-      if (secEl) secEl.hidden = !sec;
+      setShown("sec", sec);
     }
     const dt = bool(params.get("date"));
     if (dt != null) {
       el.dataset.date = dt ? "1" : "0";
-      if (dateEl) dateEl.hidden = !dt;
+      setShown("date", dt);
     }
     const lv = bool(params.get("live"));
     if (lv != null) {
       el.dataset.live = lv ? "1" : "0";
-      if (liveEl) liveEl.hidden = !lv;
+      setShown("live", lv);
     }
     const tz = params.get("tz");
-    if (tz) el.dataset.tz = tz;
+    if (tz && tz.trim()) el.dataset.tz = tz.trim();
     const lang = params.get("lang");
     if (lang === "ja" || lang === "en") el.dataset.lang = lang;
   })();
