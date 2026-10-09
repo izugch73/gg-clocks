@@ -1,0 +1,159 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="cl"
+  data-clock="chochin-lantern"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="lantern">
+    <div class="string" aria-hidden="true"></div>
+    <div class="cap" aria-hidden="true"></div>
+    <div class="body">
+      <div class="glow" aria-hidden="true"></div>
+      <div class="col">
+        <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+      </div>
+    </div>
+    <div class="cap" aria-hidden="true"></div>
+  </div>
+  <div class="foot">
+    <span class="ampm"></span>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+    <span class="live" hidden={!opts.live}>LIVE</span>
+  </div>
+</div>
+
+<style>
+  .cl {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Zen Old Mincho", serif;
+    color: var(--fg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 140px;
+  }
+  .lantern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform-origin: 50% 0;
+    animation: cl-sway 4s ease-in-out infinite;
+  }
+  .string {
+    width: 2px;
+    height: 18px;
+    background: var(--fg);
+  }
+  .cap {
+    width: 72px;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--fg);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+  }
+  /* Lantern body: accent paper, darker ribs, side shading for roundness. */
+  .body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 150px;
+    margin: -2px 0;
+    border-radius: 50%;
+    background-color: var(--accent);
+    background-image: repeating-linear-gradient(
+      180deg,
+      transparent 0 13px,
+      color-mix(in srgb, var(--accent) 72%, black) 13px 15px
+    );
+    box-shadow:
+      inset -12px 0 20px rgba(0, 0, 0, 0.28),
+      inset 10px 0 18px rgba(0, 0, 0, 0.12),
+      0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+    overflow: hidden;
+  }
+  .glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at 50% 45%,
+      color-mix(in srgb, white 62%, transparent),
+      transparent 62%
+    );
+    animation: cl-flicker 3.2s ease-in-out infinite;
+  }
+  .col {
+    position: relative;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    line-height: 1;
+  }
+  .hm {
+    font-size: 20px;
+    font-weight: 900;
+  }
+  .sec {
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0.75;
+  }
+  .ampm {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .foot {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .live {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  @keyframes cl-sway {
+    0%,
+    100% {
+      transform: rotate(-3deg);
+    }
+    50% {
+      transform: rotate(3deg);
+    }
+  }
+  @keyframes cl-flicker {
+    0%,
+    100% {
+      opacity: 0.85;
+    }
+    40% {
+      opacity: 1;
+    }
+    70% {
+      opacity: 0.9;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".cl")) mountDigital(el);
+</script>

@@ -1,0 +1,184 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Copper traces from the plate edges into the chip (chip spans x 50-230, y 18-92).
+const traces = [
+  "M4 22H24L40 38H50",
+  "M4 55H50",
+  "M4 88H24L40 72H50",
+  "M276 22H256L240 38H230",
+  "M276 55H230",
+  "M276 88H256L240 72H230",
+  "M100 4V10L108 18",
+  "M180 106V100L172 92",
+];
+const pads = [
+  [4, 22],
+  [4, 55],
+  [4, 88],
+  [276, 22],
+  [276, 55],
+  [276, 88],
+  [100, 4],
+  [180, 106],
+];
+---
+
+<div
+  class="ct"
+  data-clock="circuit-trace"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="plate">
+    <svg viewBox="0 0 280 110" width="280" height="110" aria-hidden="true">
+      <g class="copper">
+        {traces.map((d) => <path d={d} />)}
+      </g>
+      <g class="pads">
+        {pads.map(([x, y]) => <circle cx={x} cy={y} r="3" />)}
+      </g>
+      <!-- light pulses: short dash travelling along each trace -->
+      <g class="pulse">
+        {traces.map((d, i) => <path d={d} pathLength="100" style={`animation-delay:${(-i * 0.37).toFixed(2)}s`} />)}
+      </g>
+    </svg>
+    <div class="chip">
+      <div class="live" hidden={!opts.live}>● LIVE</div>
+      <div class="time">
+        <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span><span class="ampm"></span>
+      </div>
+      <div class="date" hidden={!opts.date}>--/-- ---</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ct {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Space Mono", monospace;
+  }
+  .plate {
+    position: relative;
+    width: 280px;
+    height: 110px;
+    background-color: var(--bg);
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--fg) 14%, transparent) 0.8px, transparent 1.4px);
+    background-size: 10px 10px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 30%, transparent);
+    overflow: hidden;
+  }
+  svg {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+  .copper {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+  .pads {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 1.5;
+  }
+  .pulse {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .pulse path {
+    stroke-dasharray: 6 100;
+    stroke-dashoffset: 106;
+    filter: drop-shadow(0 0 3px var(--accent));
+    animation: ct-pulse 2.5s linear infinite;
+  }
+  @keyframes ct-pulse {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  /* black IC package with pin rows along the long edges */
+  .chip {
+    position: absolute;
+    left: 50px;
+    top: 18px;
+    width: 180px;
+    height: 74px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--bg) 15%, #000);
+    color: var(--fg);
+    border-radius: 3px;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--fg) 35%, transparent),
+      0 2px 6px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    line-height: 1;
+  }
+  .chip::before,
+  .chip::after {
+    content: "";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, var(--fg) 0 3px, transparent 3px 8px);
+    opacity: 0.8;
+  }
+  .chip::before {
+    top: -4px;
+  }
+  .chip::after {
+    bottom: -4px;
+  }
+  .live {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--accent);
+    margin-bottom: 4px;
+  }
+  .time {
+    font-size: 28px;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: -1px;
+  }
+  .sec,
+  .ampm {
+    font-size: 14px;
+    margin-left: 4px;
+    letter-spacing: 0;
+  }
+  .sec {
+    color: var(--accent);
+  }
+  .ampm:empty {
+    display: none;
+  }
+  .date {
+    margin-top: 6px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    opacity: 0.8;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".ct")) mountDigital(el);
+</script>

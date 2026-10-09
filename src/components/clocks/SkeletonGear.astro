@@ -1,0 +1,151 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Gears: centre, body radius, tooth count. Teeth are a dashed thick circle
+// whose pathLength = teeth*2 so "1 1" gives exactly `teeth` dashes.
+const gears = [
+  { cls: "g1", cx: 90, cy: 64, r: 22, teeth: 16 },
+  { cls: "g2", cx: 60, cy: 112, r: 15, teeth: 11 },
+  { cls: "g3", cx: 118, cy: 116, r: 19, teeth: 14 },
+];
+---
+
+<div
+  class="sg"
+  data-clock="skeleton-gear"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 180 180" width="180" height="180" aria-hidden="true">
+    <circle cx="90" cy="90" r="88" class="face" />
+    <circle cx="90" cy="90" r="86" class="ring" />
+
+    {gears.map((g) => (
+      <g class={`gear ${g.cls}`} style={`transform-origin:${g.cx}px ${g.cy}px`}>
+        <circle cx={g.cx} cy={g.cy} r={g.r + 3} class="teeth" pathLength={g.teeth * 2} />
+        <circle cx={g.cx} cy={g.cy} r={g.r} class="body" />
+        <circle cx={g.cx} cy={g.cy} r={g.r * 0.55} class="spoke" pathLength="6" />
+        <circle cx={g.cx} cy={g.cy} r="3" class="hub" />
+      </g>
+    ))}
+
+    {Array.from({ length: 12 }).map((_, i) => (
+      <line x1="90" y1="8" x2="90" y2={i % 3 === 0 ? 18 : 14} class="idx" transform={`rotate(${i * 30} 90 90)`} />
+    ))}
+
+    <g class="hand-h">
+      <path d="M90 102 L85 92 L87.5 52 L90 46 L92.5 52 L95 92 Z" class="skel" />
+    </g>
+    <g class="hand-m">
+      <path d="M90 104 L86 94 L88.5 32 L90 26 L91.5 32 L94 94 Z" class="skel" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1="90" y1="108" x2="90" y2="20" class="hand-sec" />
+      <circle cx="90" cy="108" r="2.5" class="counter" />
+    </g>
+    <circle cx="90" cy="90" r="4.5" class="jewel" />
+    <circle cx="88.6" cy="88.6" r="1.3" class="jewel-hi" />
+  </svg>
+</div>
+
+<style>
+  .sg {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .sg svg {
+    display: block;
+  }
+  .face {
+    fill: var(--bg);
+  }
+  .ring {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 3;
+  }
+  .gear {
+    opacity: 0.5;
+    animation: sg-spin 24s linear infinite;
+  }
+  .g2 {
+    animation-duration: 16s;
+    animation-direction: reverse;
+  }
+  .g3 {
+    animation-duration: 20s;
+  }
+  .teeth {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6;
+    stroke-dasharray: 1 1;
+  }
+  .body {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 5;
+  }
+  .spoke {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-dasharray: 0.6 0.4;
+  }
+  .hub {
+    fill: var(--accent);
+  }
+  .idx {
+    stroke: var(--fg);
+    stroke-width: 3;
+    stroke-linecap: butt;
+  }
+  .skel {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+  .counter {
+    fill: var(--accent);
+  }
+  .jewel {
+    fill: var(--accent);
+    stroke: var(--fg);
+    stroke-width: 1;
+  }
+  .jewel-hi {
+    fill: white;
+    opacity: 0.85;
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 90px 90px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  @keyframes sg-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".sg")) mountAnalog(el);
+</script>

@@ -1,0 +1,119 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const dateHidden = opts.date ? {} : { hidden: true };
+---
+
+<div
+  class="stc"
+  data-clock="station-clock"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <span class="hm" hidden>--:--</span>
+  <svg viewBox="0 0 180 180" width="180" height="180" aria-hidden="true">
+    <circle cx="90" cy="90" r="88" class="rim" />
+    <circle cx="90" cy="90" r="80" class="face" />
+
+    {Array.from({ length: 60 }).map((_, i) => (
+      <line
+        x1="90"
+        y1="12"
+        x2="90"
+        y2={i % 5 === 0 ? 28 : 19}
+        class={i % 5 === 0 ? "tick tick-hour" : "tick"}
+        transform={`rotate(${i * 6} 90 90)`}
+      />
+    ))}
+
+    {/* Date window at 6 o'clock; rect follows the .date text via data-with */}
+    <rect x="72" y="124" width="36" height="14" rx="1.5" class="date-win" data-with="date" {...dateHidden} />
+    <text x="90" y="131.5" class="date" text-anchor="middle" dominant-baseline="central" {...dateHidden}>--/--</text>
+
+    <g class="hand-h">
+      <rect x="85.5" y="42" width="9" height="64" class="hand" />
+    </g>
+    <g class="hand-m">
+      <rect x="86.5" y="22" width="7" height="88" class="hand" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1="90" y1="116" x2="90" y2="30" class="hand-sec" />
+      <circle cx="90" cy="34" r="6.5" class="lolli" />
+    </g>
+    <circle cx="90" cy="90" r="4" class="pin" />
+  </svg>
+</div>
+
+<style>
+  .stc {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .stc svg {
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.22));
+  }
+  .rim {
+    fill: var(--fg);
+  }
+  .face {
+    fill: var(--bg);
+  }
+  .tick {
+    stroke: var(--fg);
+    stroke-width: 2;
+    stroke-linecap: butt;
+  }
+  .tick-hour {
+    stroke-width: 5.5;
+  }
+  .date-win {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 1.2;
+  }
+  .date {
+    font-family: "Roboto", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 0.3px;
+    fill: var(--fg);
+  }
+  .hand {
+    fill: var(--fg);
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 2.2;
+    stroke-linecap: butt;
+  }
+  .lolli,
+  .pin {
+    fill: var(--accent);
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 90px 90px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    /* Station clocks "stop" briefly at 12; a slightly overshooting step reads as that */
+    transition: transform 0.25s cubic-bezier(0.3, 1.8, 0.5, 1);
+  }
+</style>
+
+<script>
+  import { mountAnalog, mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".stc")) {
+    mountAnalog(el);
+    // secSelector must not match the `.hand-s.sec` group (mountDigital would overwrite it).
+    mountDigital(el, { secSelector: ".sec-digits", renderDate: (p) => `${p.month}/${p.day}` });
+  }
+</script>

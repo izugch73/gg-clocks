@@ -1,0 +1,172 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// twinkling star dots: x, y, animation delay
+const stars: [number, number, number][] = [
+  [22, 40, 0], [128, 52, 1.1], [40, 120, 2.2], [112, 128, 0.6], [26, 176, 1.7],
+  [124, 184, 2.6], [74, 30, 1.4], [92, 160, 0.3], [50, 70, 2.0], [104, 92, 1.9],
+];
+---
+
+<div
+  class="tc"
+  data-clock="tarot-card"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="card">
+    <svg class="orn" viewBox="0 0 150 240" width="150" height="240" aria-hidden="true">
+      {stars.map(([x, y, d]) => (
+        <circle cx={x} cy={y} r="1" class="star" style={`animation-delay:${d}s`} />
+      ))}
+      <rect x="8" y="8" width="134" height="224" rx="4" class="inner-border" />
+      {/* corner flourishes: an arc hugging each corner */}
+      <path d="M12 30 Q12 12 30 12" class="flourish" />
+      <path d="M120 12 Q138 12 138 30" class="flourish" />
+      <path d="M138 210 Q138 228 120 228" class="flourish" />
+      <path d="M30 228 Q12 228 12 210" class="flourish" />
+    </svg>
+    <div class="numeral">XVII</div>
+    <span class="live" hidden={!opts.live}>● LIVE</span>
+    <svg class="emblem" viewBox="0 0 80 60" width="80" height="60" aria-hidden="true">
+      <path d="M26 8 A20 20 0 1 0 26 48 A15 15 0 1 1 26 8 Z" class="moon" />
+      <path d="M40 32 Q58 12 76 32 Q58 52 40 32 Z" class="eye" />
+      <circle cx="58" cy="32" r="5.5" class="pupil" />
+      <circle cx="60" cy="30" r="1.5" class="gleam" />
+    </svg>
+    <div class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+    <div class="banner date" hidden={!opts.date}>--/-- ---</div>
+  </div>
+</div>
+
+<style>
+  .tc {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Cinzel", "Times New Roman", serif;
+  }
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 150px;
+    height: 240px;
+    box-sizing: border-box;
+    padding: 18px 14px 14px;
+    background: var(--bg);
+    color: var(--fg);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+  .orn {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .star {
+    fill: var(--fg);
+    animation: tc-twinkle 3s ease-in-out infinite;
+  }
+  .inner-border {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1;
+    opacity: 0.8;
+  }
+  .flourish {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+  .numeral {
+    position: relative;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .live {
+    position: relative;
+    margin-top: 6px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .emblem {
+    position: relative;
+    display: block;
+    margin: 14px 0 10px;
+  }
+  .moon {
+    fill: var(--accent);
+  }
+  .eye {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.6;
+  }
+  .pupil {
+    fill: var(--accent);
+  }
+  .gleam {
+    fill: var(--bg);
+  }
+  .time {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .time .sec {
+    font-size: 12px;
+    letter-spacing: 1px;
+    opacity: 0.8;
+  }
+  .banner {
+    position: relative;
+    margin-top: auto;
+    width: 100%;
+    padding: 6px 0;
+    text-align: center;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1;
+    border-radius: 2px;
+  }
+  @keyframes tc-twinkle {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".tc")) mountDigital(el);
+</script>

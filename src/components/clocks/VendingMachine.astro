@@ -1,0 +1,166 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const cans = ["c1", "c2", "c3", "c4"];
+---
+
+<div
+  class="vm"
+  data-clock="vending-machine"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="body">
+    <div class="face">
+      <div class="shelf" aria-hidden="true">
+        {cans.map((c, i) => (
+          <div class="slot">
+            <span class={`can ${c}`}></span>
+            <span class="btn" style={`--i:${i}`}></span>
+          </div>
+        ))}
+      </div>
+      <div class="disp">
+        <svg class="ck" viewBox="0 0 12 12" aria-hidden="true">
+          <circle cx="6" cy="6" r="5" fill="none" stroke="var(--accent)" stroke-width="1.4" />
+          <path d="M6 3v3l2 1.4" stroke="var(--accent)" stroke-width="1.4" fill="none" stroke-linecap="round" />
+        </svg>
+        <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+      </div>
+      <div class="strip date" hidden={!opts.date}>--/-- ---</div>
+      <div class="strip live" hidden={!opts.live}><span class="lamp"></span>LIVE</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .vm {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "DotGothic16", monospace;
+    color: var(--fg);
+  }
+  .body {
+    width: 220px;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 80%, white), var(--bg) 45%, color-mix(in srgb, var(--bg) 80%, black));
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  .face {
+    background: #fff;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 20%, transparent);
+  }
+  .shelf {
+    display: flex;
+    justify-content: space-around;
+    padding-bottom: 6px;
+    border-bottom: 2px solid color-mix(in srgb, var(--fg) 15%, transparent);
+  }
+  .slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .can {
+    width: 16px;
+    height: 26px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  }
+  .c1 { background: repeating-linear-gradient(180deg, #e63946 0 6px, #f6b8bd 6px 8px); }
+  .c2 { background: repeating-linear-gradient(180deg, #2a9d8f 0 5px, #b9e7e2 5px 7px); }
+  .c3 { background: repeating-linear-gradient(180deg, #f4a261 0 7px, #ffe1c6 7px 9px); }
+  .c4 { background: repeating-linear-gradient(180deg, #457b9d 0 5px, #cfe3f0 5px 7px); }
+  /* pill button with a lamp that cycles red / blue across the row */
+  .btn {
+    width: 18px;
+    height: 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fg) 25%, transparent);
+    animation: vm-lamp 4s steps(1, end) infinite;
+    animation-delay: calc(var(--i) * -1s);
+  }
+  @keyframes vm-lamp {
+    0% {
+      background: #ff4d4d;
+      box-shadow: 0 0 5px #ff4d4d;
+    }
+    25% {
+      background: #4da3ff;
+      box-shadow: 0 0 5px #4da3ff;
+    }
+    50% {
+      background: color-mix(in srgb, var(--fg) 25%, transparent);
+      box-shadow: none;
+    }
+  }
+  .disp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 5px 8px;
+    background: color-mix(in srgb, var(--fg) 85%, black);
+    border-radius: 3px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+    color: var(--accent);
+    text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent);
+    font-size: 26px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .ck {
+    width: 14px;
+    height: 14px;
+  }
+  .sec {
+    font-size: 14px;
+    opacity: 0.85;
+    align-self: flex-end;
+  }
+  .strip {
+    margin-top: 6px;
+    padding: 2px 6px;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 1px;
+    background: color-mix(in srgb, var(--fg) 6%, white);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 18%, transparent);
+  }
+  .live {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #d7262e;
+    font-weight: 700;
+  }
+  .live[hidden] {
+    display: none;
+  }
+  .lamp {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d7262e;
+    box-shadow: 0 0 4px #d7262e;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".vm")) mountDigital(el);
+</script>

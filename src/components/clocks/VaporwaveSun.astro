@@ -1,0 +1,138 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="vw"
+  data-clock="vaporwave-sun"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="scene">
+    <div class="grid" aria-hidden="true"></div>
+    <!-- sun: gradient disc with transparent horizontal cuts that thicken downward -->
+    <svg class="sun" viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <defs>
+        <linearGradient id="vw-sun" x1="0" y1="0" x2="0" y2="1">
+          <stop class="stop-a" offset="0" />
+          <stop class="stop-b" offset="1" />
+        </linearGradient>
+        <mask id="vw-cut">
+          <rect width="120" height="120" fill="white" />
+          <rect x="0" y="62" width="120" height="2" fill="black" />
+          <rect x="0" y="72" width="120" height="3" fill="black" />
+          <rect x="0" y="83" width="120" height="4.5" fill="black" />
+          <rect x="0" y="95" width="120" height="6" fill="black" />
+          <rect x="0" y="108" width="120" height="12" fill="black" />
+        </mask>
+      </defs>
+      <circle cx="60" cy="60" r="56" fill="url(#vw-sun)" mask="url(#vw-cut)" />
+    </svg>
+    <div class="content">
+      <div class="live" hidden={!opts.live}>● LIVE</div>
+      <div class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+      <div class="date" hidden={!opts.date}>--/-- ---</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .vw {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Monoton", cursive;
+  }
+  .scene {
+    position: relative;
+    width: 300px;
+    height: 150px;
+    background: var(--bg);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg);
+  }
+  .sun {
+    position: absolute;
+    left: 50%;
+    top: 4px;
+    margin-left: -60px;
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 55%, transparent));
+    animation: vw-float 8s ease-in-out infinite;
+  }
+  .stop-a {
+    stop-color: var(--accent);
+  }
+  .stop-b {
+    stop-color: color-mix(in srgb, var(--accent) 45%, #ffd6f5);
+  }
+  /* perspective floor grid receding to the horizon */
+  .grid {
+    position: absolute;
+    left: -60px;
+    right: -60px;
+    bottom: -10px;
+    height: 70px;
+    background-image:
+      repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent) 0 2px, transparent 2px 30px),
+      repeating-linear-gradient(0deg, color-mix(in srgb, var(--accent) 40%, transparent) 0 2px, transparent 2px 16px);
+    transform: perspective(160px) rotateX(58deg);
+    transform-origin: 50% 100%;
+    -webkit-mask-image: linear-gradient(180deg, transparent, black 40%);
+    mask-image: linear-gradient(180deg, transparent, black 40%);
+  }
+  .content {
+    position: relative;
+    text-align: center;
+    margin-top: 14px;
+  }
+  .live {
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 2px;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent);
+  }
+  .time {
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    /* chromatic split: cyan one way, pink (accent) the other */
+    text-shadow:
+      -2px 0 0 #2ff3ff,
+      2px 0 0 var(--accent),
+      0 0 14px color-mix(in srgb, var(--fg) 40%, transparent);
+  }
+  .sec {
+    font-size: 20px;
+    margin-left: 8px;
+  }
+  .date {
+    margin-top: 8px;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-shadow:
+      -1px 0 0 #2ff3ff,
+      1px 0 0 var(--accent);
+  }
+  @keyframes vw-float {
+    50% {
+      transform: translateY(6px);
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".vw")) mountDigital(el);
+</script>

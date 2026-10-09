@@ -1,0 +1,150 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="rs"
+  data-clock="radar-sweep"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 190 190" width="190" height="190" aria-hidden="true">
+    <defs>
+      {/* Fades across the 40° wedge: transparent at the trailing edge, accent at the hand */}
+      <linearGradient id="rs-sweep" gradientUnits="userSpaceOnUse" x1="38" y1="28" x2="95" y2="7">
+        <stop offset="0%" class="sw-tail" />
+        <stop offset="100%" class="sw-head" />
+      </linearGradient>
+    </defs>
+    <circle cx="95" cy="95" r="92" class="scope" />
+    {[30, 56, 82].map((r) => (
+      <circle cx="95" cy="95" r={r} class="grid" />
+    ))}
+    <line x1="95" y1="5" x2="95" y2="185" class="grid" />
+    <line x1="5" y1="95" x2="185" y2="95" class="grid" />
+
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <path d="M95 95 L38.4 27.6 A88 88 0 0 1 95 7 Z" fill="url(#rs-sweep)" />
+      <line x1="95" y1="95" x2="95" y2="7" class="beam" />
+    </g>
+
+    {Array.from({ length: 12 }).map((_, i) => {
+      const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      return (
+        <circle cx={95 + Math.cos(a) * 84} cy={95 + Math.sin(a) * 84} r="2.4" class="blip" style={`--i:${i}`} />
+      );
+    })}
+
+    <g class="hand-h">
+      <line x1="95" y1="100" x2="95" y2="56" class="hand hand-hour" />
+    </g>
+    <g class="hand-m">
+      <line x1="95" y1="102" x2="95" y2="34" class="hand hand-min" />
+    </g>
+    <circle cx="95" cy="95" r="3" class="pin" />
+    <text x="95" y="128" class="hm" text-anchor="middle" dominant-baseline="central">--:--</text>
+  </svg>
+</div>
+
+<style>
+  .rs {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    --dim: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .rs svg {
+    display: block;
+  }
+  .scope {
+    fill: var(--bg);
+    stroke: var(--dim);
+    stroke-width: 2;
+  }
+  .grid {
+    fill: none;
+    stroke: var(--dim);
+    stroke-width: 1;
+  }
+  .sw-tail {
+    stop-color: var(--accent);
+    stop-opacity: 0;
+  }
+  .sw-head {
+    stop-color: var(--accent);
+    stop-opacity: 0.55;
+  }
+  .beam {
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 3px var(--accent));
+  }
+  .blip {
+    fill: var(--fg);
+    opacity: 0.35;
+    /* The sweep reaches hour position i at second 5·i; --sync (set at mount) aligns the phase */
+    animation: rs-blip 60s linear infinite;
+    animation-delay: calc(var(--sync, 0s) + var(--i) * 5s);
+  }
+  .hand {
+    stroke: var(--accent);
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 3px var(--accent));
+  }
+  .hand-hour {
+    stroke-width: 3;
+  }
+  .hand-min {
+    stroke-width: 2;
+  }
+  .pin {
+    fill: var(--accent);
+  }
+  .hm {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 14px;
+    fill: var(--fg);
+    letter-spacing: 1px;
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 95px 95px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.9s linear;
+  }
+  @keyframes rs-blip {
+    0% {
+      opacity: 1;
+      fill: var(--accent);
+      r: 4;
+    }
+    12% {
+      opacity: 0.35;
+      fill: var(--fg);
+      r: 2.4;
+    }
+    100% {
+      opacity: 0.35;
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog, mountDigital, createTimeReader } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".rs")) {
+    // Phase the blip pulses to the wall clock so they fire as the sweep passes.
+    el.style.setProperty("--sync", `${-createTimeReader(el.dataset.tz)().second}s`);
+    mountAnalog(el);
+    // No digital seconds here; keep mountDigital away from the `.hand-s.sec` group.
+    mountDigital(el, { secSelector: ".sec-digits" });
+  }
+</script>

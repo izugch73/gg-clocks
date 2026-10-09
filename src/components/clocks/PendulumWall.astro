@@ -1,0 +1,168 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const C = 90;
+const dateHidden = opts.date ? {} : { hidden: true };
+const dots = Array.from({ length: 12 }).map((_, i) => {
+  const a = (i / 12) * Math.PI * 2;
+  return { x: C + Math.sin(a) * 74, y: C - Math.cos(a) * 74, major: i % 3 === 0 };
+});
+---
+
+<div
+  class="pw"
+  data-clock="pendulum-wall"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="body">
+    <span class="hm" hidden>--:--</span>
+    <svg viewBox="0 0 180 180" width="180" height="180" aria-hidden="true">
+      <circle cx={C} cy={C} r="86" class="face" />
+      {dots.map((d) => (
+        <circle cx={d.x} cy={d.y} r={d.major ? 3 : 1.8} class="dot" />
+      ))}
+      <text x={C} y="122" class="date" text-anchor="middle" dominant-baseline="central" {...dateHidden}>--/-- ---</text>
+      <g class="hand-h">
+        <rect x="86.5" y="46" width="7" height="56" rx="3" class="hand" />
+      </g>
+      <g class="hand-m">
+        <rect x="88" y="22" width="4" height="82" rx="2" class="hand" />
+      </g>
+      <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+        <line x1={C} y1="104" x2={C} y2="18" class="hand-sec" />
+      </g>
+      <circle cx={C} cy={C} r="5" class="cap" />
+    </svg>
+    <span class="live" hidden={!opts.live}>● LIVE</span>
+    <svg viewBox="0 0 120 110" width="120" height="110" class="window" aria-hidden="true">
+      <defs>
+        <clipPath id="pw-win"><ellipse cx="60" cy="55" rx="40" ry="51" /></clipPath>
+        <radialGradient id="pw-brass" cx="38%" cy="32%" r="70%">
+          <stop offset="0%" stop-color="var(--fg)" />
+          <stop offset="35%" stop-color="var(--accent)" />
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.75" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="60" cy="55" rx="40" ry="51" class="glass" />
+      <g clip-path="url(#pw-win)">
+        <g class="pend">
+          <line x1="60" y1="0" x2="60" y2="84" class="rod" />
+          <circle cx="60" cy="88" r="14" fill="url(#pw-brass)" />
+          <circle cx="60" cy="88" r="14" class="bob-ring" />
+        </g>
+      </g>
+      <ellipse cx="60" cy="55" rx="40" ry="51" class="glass-rim" />
+    </svg>
+  </div>
+</div>
+
+<style>
+  .pw {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Zen Old Mincho", serif;
+  }
+  .body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 220px;
+    padding: 18px 14px 14px;
+    box-sizing: border-box;
+    background: var(--bg);
+    border-radius: 110px 110px 14px 14px;
+    box-shadow:
+      inset 0 0 0 6px color-mix(in srgb, var(--fg) 18%, transparent),
+      0 10px 24px rgba(0, 0, 0, 0.3);
+  }
+  .body svg {
+    display: block;
+  }
+  .face {
+    fill: color-mix(in srgb, var(--bg) 82%, var(--fg));
+    stroke: color-mix(in srgb, var(--fg) 35%, transparent);
+    stroke-width: 2;
+  }
+  .dot {
+    fill: var(--fg);
+  }
+  .date {
+    font-family: "Zen Old Mincho", serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    fill: var(--fg);
+    opacity: 0.85;
+  }
+  .hand {
+    fill: var(--fg);
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+  .cap {
+    fill: var(--accent);
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 90px 90px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .live {
+    margin: 2px 0;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+  .glass {
+    fill: color-mix(in srgb, var(--bg) 70%, black);
+  }
+  .glass-rim {
+    fill: none;
+    stroke: color-mix(in srgb, var(--fg) 30%, transparent);
+    stroke-width: 2;
+  }
+  .rod {
+    stroke: var(--fg);
+    stroke-width: 2;
+    opacity: 0.8;
+  }
+  .bob-ring {
+    fill: none;
+    stroke: color-mix(in srgb, var(--fg) 40%, transparent);
+    stroke-width: 1;
+  }
+  .pend {
+    transform-origin: 60px 0px;
+    animation: pw-swing 1s ease-in-out infinite alternate;
+  }
+  @keyframes pw-swing {
+    from {
+      transform: rotate(-12deg);
+    }
+    to {
+      transform: rotate(12deg);
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog, mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".pw")) {
+    mountAnalog(el);
+    mountDigital(el);
+  }
+</script>

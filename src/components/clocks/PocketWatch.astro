@@ -1,0 +1,200 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Dial centre; the bow ring sits at (95, 16)
+const C = { x: 95, y: 126 };
+// Chain links curving from the bow to the upper right: [cx, cy, angle]
+const links: [number, number, number][] = [
+  [112, 11, 10], [124, 9, 0], [136, 10, -15], [147, 15, -35], [156, 24, -55], [162, 36, -70], [166, 49, -80],
+];
+---
+
+<div
+  class="pw"
+  data-clock="pocket-watch"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 190 220" width="190" height="220" aria-hidden="true">
+    <defs>
+      <radialGradient id="pw-gold" cx="35%" cy="30%" r="80%">
+        <stop offset="0%" class="gold-hi" />
+        <stop offset="55%" class="gold-mid" />
+        <stop offset="100%" class="gold-dark" />
+      </radialGradient>
+    </defs>
+    {links.map(([x, y, a]) => (
+      <ellipse cx={x} cy={y} rx="6.5" ry="3.5" class="link" transform={`rotate(${a} ${x} ${y})`} />
+    ))}
+    <g class="watch">
+      <circle cx="95" cy="16" r="9" class="bow" />
+      <rect x="86" y="24" width="18" height="12" rx="2.5" class="crown" />
+      <circle cx={C.x} cy={C.y} r="84" fill="url(#pw-gold)" />
+      <circle cx={C.x} cy={C.y} r="79" class="band" />
+      <circle cx={C.x} cy={C.y} r="74" class="band band-thin" />
+      <circle cx={C.x} cy={C.y} r="71" class="dial" />
+
+      {Array.from({ length: 60 }).map((_, i) => (
+        <line x1={C.x} y1={C.y - 69} x2={C.x} y2={C.y - (i % 5 === 0 ? 63 : 66)} class="tick" transform={`rotate(${i * 6} ${C.x} ${C.y})`} />
+      ))}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const n = i === 0 ? 12 : i;
+        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+        return (
+          <text x={C.x + Math.cos(a) * 54} y={C.y + Math.sin(a) * 54} class="num" text-anchor="middle" dominant-baseline="central">
+            {n}
+          </text>
+        );
+      })}
+
+      {/* Small seconds sub-dial at 6 */}
+      <circle cx={C.x} cy={C.y + 36} r="16" class="sub" />
+      <circle cx={C.x} cy={C.y + 36} r="13" class="sub-ticks" pathLength="24" />
+      <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+        <line x1={C.x} y1={C.y + 40} x2={C.x} y2={C.y + 24} class="hand-sec" />
+      </g>
+      <circle cx={C.x} cy={C.y + 36} r="1.5" class="sub-pin" />
+
+      {/* Breguet-style hands: stem, open moon ring, spade tip */}
+      <g class="hand-h">
+        <line x1={C.x} y1={C.y + 12} x2={C.x} y2={C.y - 30} class="stem stem-h" />
+        <circle cx={C.x} cy={C.y - 35} r="4.5" class="moon" />
+        <path d={`M${C.x} ${C.y - 40} L${C.x - 3.2} ${C.y - 44} L${C.x} ${C.y - 50} L${C.x + 3.2} ${C.y - 44} Z`} class="spade" />
+      </g>
+      <g class="hand-m">
+        <line x1={C.x} y1={C.y + 14} x2={C.x} y2={C.y - 46} class="stem stem-m" />
+        <circle cx={C.x} cy={C.y - 50.5} r="4" class="moon" />
+        <path d={`M${C.x} ${C.y - 55} L${C.x - 2.8} ${C.y - 59} L${C.x} ${C.y - 66} L${C.x + 2.8} ${C.y - 59} Z`} class="spade" />
+      </g>
+      <circle cx={C.x} cy={C.y} r="4" class="pin" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .pw {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .pw svg {
+    display: block;
+  }
+  .watch {
+    transform-origin: 95px 16px;
+    animation: pw-swing 5s ease-in-out infinite alternate;
+  }
+  .link {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+  .bow {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 4;
+  }
+  .crown {
+    fill: var(--accent);
+    stroke: color-mix(in srgb, var(--accent) 60%, black);
+    stroke-width: 1;
+  }
+  .gold-hi {
+    stop-color: color-mix(in srgb, var(--accent) 55%, white);
+  }
+  .gold-mid {
+    stop-color: var(--accent);
+  }
+  .gold-dark {
+    stop-color: color-mix(in srgb, var(--accent) 65%, black);
+  }
+  .band {
+    fill: none;
+    stroke: color-mix(in srgb, var(--accent) 60%, black);
+    stroke-width: 2.5;
+  }
+  .band-thin {
+    stroke-width: 1;
+    opacity: 0.8;
+  }
+  .dial {
+    fill: var(--bg);
+  }
+  .tick {
+    stroke: var(--fg);
+    stroke-width: 1;
+    opacity: 0.6;
+  }
+  .num {
+    font-family: "Cinzel", serif;
+    font-weight: 700;
+    font-size: 12px;
+    fill: var(--fg);
+  }
+  .sub {
+    fill: none;
+    stroke: color-mix(in srgb, var(--fg) 35%, transparent);
+    stroke-width: 1;
+  }
+  .sub-ticks {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 2.5;
+    stroke-dasharray: 0.12 1.88;
+    opacity: 0.7;
+  }
+  .sub-pin,
+  .pin {
+    fill: var(--fg);
+  }
+  .hand-sec {
+    stroke: var(--fg);
+    stroke-width: 1;
+    stroke-linecap: round;
+  }
+  .stem {
+    stroke: var(--fg);
+    stroke-linecap: round;
+  }
+  .stem-h {
+    stroke-width: 3;
+  }
+  .stem-m {
+    stroke-width: 2.2;
+  }
+  .moon {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 2.4;
+  }
+  .spade {
+    fill: var(--fg);
+  }
+  .hand-h,
+  .hand-m {
+    transform-origin: 95px 126px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transform-origin: 95px 162px;
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  @keyframes pw-swing {
+    from {
+      transform: rotate(-2deg);
+    }
+    to {
+      transform: rotate(2deg);
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".pw")) mountAnalog(el);
+</script>

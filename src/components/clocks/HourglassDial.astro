@@ -1,0 +1,169 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const C = 100;
+// Hourglass bulbs (neck at the dial centre)
+const upper = "M84 66 L116 66 C116 84 102 92 100 100 C98 92 84 84 84 66 Z";
+const lower = "M84 134 L116 134 C116 116 102 108 100 100 C98 108 84 116 84 134 Z";
+---
+
+<div
+  class="hg"
+  data-clock="hourglass-dial"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+    <defs>
+      <clipPath id="hg-top"><path d={upper} /></clipPath>
+      <clipPath id="hg-bot"><path d={lower} /></clipPath>
+    </defs>
+    <circle cx={C} cy={C} r="97" class="dial" />
+    {Array.from({ length: 60 }).map((_, i) => (
+      <line
+        x1={C}
+        y1="4"
+        x2={C}
+        y2={i % 5 === 0 ? 13 : 9}
+        class={i % 5 === 0 ? "tick major" : "tick"}
+        transform={`rotate(${i * 6} 100 100)`}
+      />
+    ))}
+
+    {/* Hourglass: frame bars, sand (looping 60s animation), glass outline */}
+    <rect x="78" y="61" width="44" height="5" rx="1.5" class="bar" />
+    <rect x="78" y="134" width="44" height="5" rx="1.5" class="bar" />
+    <g clip-path="url(#hg-top)">
+      <rect x="80" y="66" width="40" height="36" class="sand sand-top" />
+    </g>
+    <g clip-path="url(#hg-bot)">
+      <polygon points="82,134 118,134 100,112" class="sand sand-bot" />
+    </g>
+    <line x1={C} y1="100" x2={C} y2="131" class="stream" />
+    <path d={upper} class="glass" />
+    <path d={lower} class="glass" />
+
+    <g class="hand-h">
+      <polygon points="100,50 104,100 100,108 96,100" class="hand" />
+    </g>
+    <g class="hand-m">
+      <polygon points="100,26 103,100 100,108 97,100" class="hand" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1={C} y1="112" x2={C} y2="20" class="hand-sec" />
+      <circle cx={C} cy="117" r="4" class="tail" />
+    </g>
+    <circle cx={C} cy={C} r="4" class="pin" />
+    <circle cx={C} cy={C} r="1.6" class="pin-center" />
+  </svg>
+</div>
+
+<style>
+  .hg {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Playfair Display", Georgia, serif;
+  }
+  .hg svg {
+    display: block;
+  }
+  .dial {
+    fill: var(--bg);
+    stroke: color-mix(in srgb, var(--fg) 30%, transparent);
+    stroke-width: 1.5;
+  }
+  .tick {
+    stroke: var(--fg);
+    stroke-width: 1;
+    opacity: 0.45;
+  }
+  .major {
+    stroke-width: 2;
+    opacity: 0.9;
+  }
+  .bar {
+    fill: var(--fg);
+    opacity: 0.5;
+  }
+  .glass {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1.4;
+    opacity: 0.5;
+  }
+  .sand {
+    fill: var(--accent);
+  }
+  .sand-top {
+    animation: hg-drain 60s linear infinite;
+  }
+  .sand-bot {
+    transform-origin: 100px 134px;
+    animation: hg-pile 60s linear infinite;
+  }
+  .stream {
+    stroke: var(--accent);
+    stroke-width: 1;
+    animation: hg-flicker 0.4s steps(2, end) infinite;
+  }
+  .hand {
+    fill: var(--fg);
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+  .tail {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.2;
+  }
+  .pin {
+    fill: var(--fg);
+  }
+  .pin-center {
+    fill: var(--accent);
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 100px 100px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  @keyframes hg-drain {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(36px);
+    }
+  }
+  @keyframes hg-pile {
+    from {
+      transform: scale(0.15, 0.02);
+    }
+    to {
+      transform: scale(1, 1);
+    }
+  }
+  @keyframes hg-flicker {
+    50% {
+      opacity: 0.35;
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".hg")) mountAnalog(el);
+</script>

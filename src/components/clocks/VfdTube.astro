@@ -1,0 +1,145 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="vfd"
+  data-clock="vfd-tube"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <div class="mesh" aria-hidden="true"></div>
+    <div class="row">
+      <span class="disp">
+        <span class="ghost" aria-hidden="true">88:88</span>
+        <span class="hm">--:--</span>
+      </span>
+      <span class="disp s" data-with="sec" hidden={!opts.seconds}>
+        <span class="ghost" aria-hidden="true">88</span>
+        <span class="sec">--</span>
+      </span>
+      <span class="ampm" hidden></span>
+      <span class="labels" aria-hidden="true">
+        <span class="lbl am">AM</span>
+        <span class="lbl pm">PM</span>
+        <span class="lbl on sec-lbl" data-with="sec" hidden={!opts.seconds}>SEC</span>
+        <span class="lbl on live" hidden={!opts.live}>LIVE</span>
+      </span>
+    </div>
+    <div class="date" hidden={!opts.date}>--/-- ---</div>
+  </div>
+</div>
+
+<style>
+  .vfd {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Share Tech Mono", "Menlo", monospace;
+  }
+  .panel {
+    position: relative;
+    width: 252px;
+    box-sizing: border-box;
+    padding: 9px 14px 8px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 2px solid color-mix(in srgb, var(--fg) 70%, transparent);
+    box-shadow:
+      inset 0 0 18px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 color-mix(in srgb, var(--fg) 30%, transparent),
+      0 0 10px color-mix(in srgb, var(--accent) 12%, transparent);
+    overflow: hidden;
+  }
+  /* fine fluorescent mesh behind the digits */
+  .mesh {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      repeating-linear-gradient(0deg, color-mix(in srgb, var(--accent) 8%, transparent) 0 1px, transparent 1px 4px),
+      repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent) 0 1px, transparent 1px 4px);
+  }
+  .row {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    line-height: 1;
+  }
+  .disp {
+    position: relative;
+    display: inline-block;
+    font-size: 46px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    text-shadow:
+      0 0 4px var(--accent),
+      0 0 12px var(--accent);
+  }
+  .disp.s {
+    font-size: 24px;
+  }
+  .ghost {
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--accent);
+    opacity: 0.07;
+    text-shadow: none;
+  }
+  .hm,
+  .sec {
+    position: relative;
+  }
+  .labels {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-left: auto;
+    align-self: center;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .lbl {
+    color: var(--accent);
+    opacity: 0.12;
+    text-shadow: none;
+    transition: opacity 0.3s;
+  }
+  .lbl.on,
+  .vfd[data-ampm="am"] .lbl.am,
+  .vfd[data-ampm="pm"] .lbl.pm {
+    opacity: 1;
+    text-shadow: 0 0 6px var(--accent);
+  }
+  .date {
+    position: relative;
+    margin-top: 3px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    opacity: 0.85;
+    text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".vfd")) {
+    mountDigital(el, {
+      // The AM/PM suffix is swallowed by the hidden .ampm and shown as segment labels instead.
+      onTick: (p, { format }) => {
+        if (format === "12") el.dataset.ampm = p.hour >= 12 ? "pm" : "am";
+        else delete el.dataset.ampm;
+      },
+    });
+  }
+</script>

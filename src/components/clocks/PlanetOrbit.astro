@@ -1,0 +1,133 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const C = 100;
+// static background stars (x, y, radius)
+const stars: [number, number, number][] = [
+  [18, 30, 0.8], [36, 160, 0.7], [170, 24, 0.9], [184, 140, 0.7], [60, 12, 0.6],
+  [150, 186, 0.8], [12, 108, 0.6], [190, 76, 0.6], [120, 170, 0.5], [78, 190, 0.7],
+];
+---
+
+<div
+  class="po"
+  data-clock="planet-orbit"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+    <defs>
+      <radialGradient id="po-sun">
+        <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.9" />
+        <stop offset="45%" stop-color="var(--accent)" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+      </radialGradient>
+      <linearGradient id="po-tail" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--fg)" stop-opacity="0.9" />
+        <stop offset="100%" stop-color="var(--fg)" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <rect width="200" height="200" class="space" />
+    {stars.map(([x, y, r]) => (
+      <circle cx={x} cy={y} r={r} class="star" />
+    ))}
+    <circle cx={C} cy={C} r="60" class="orbit" />
+    <circle cx={C} cy={C} r="90" class="orbit" />
+
+    <circle cx={C} cy={C} r="26" fill="url(#po-sun)" class="glow" />
+    <circle cx={C} cy={C} r="8" class="sun" />
+
+    {/* Hands are invisible; only the planet at each tip shows */}
+    <g class="hand-h">
+      <circle cx={C} cy="40" r="6" class="planet-h" />
+    </g>
+    <g class="hand-m">
+      <ellipse cx={C} cy="10" rx="8.5" ry="2.4" class="ring" transform="rotate(-20 100 10)" />
+      <circle cx={C} cy="10" r="4.5" class="planet-m" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1={C} y1="25" x2={C} y2="45" class="tail" />
+      <circle cx={C} cy="25" r="1.6" class="comet" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .po {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Orbitron", system-ui, sans-serif;
+  }
+  .po svg {
+    display: block;
+  }
+  .space {
+    fill: var(--bg);
+  }
+  .star {
+    fill: var(--fg);
+    opacity: 0.8;
+  }
+  .orbit {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 0.8;
+    stroke-dasharray: 3 4;
+    opacity: 0.3;
+  }
+  .glow {
+    transform-origin: 100px 100px;
+    animation: po-pulse 3s ease-in-out infinite;
+  }
+  .sun {
+    fill: var(--accent);
+  }
+  .planet-h {
+    fill: var(--fg);
+  }
+  .planet-m {
+    fill: var(--accent);
+  }
+  .ring {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1;
+    opacity: 0.8;
+  }
+  .tail {
+    stroke: url(#po-tail);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+  }
+  .comet {
+    fill: var(--fg);
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 100px 100px;
+    transition: transform 0.3s ease-out;
+  }
+  @keyframes po-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.85;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".po")) mountAnalog(el);
+</script>

@@ -1,0 +1,166 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// SSR placeholder tubes; the script rebuilds them from the real time.
+const placeholder = ["-", "-", ":", "-", "-"];
+---
+
+<div
+  class="nx"
+  data-clock="nixie-tube"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <!-- .hm/.sec stay in the DOM for the runtime; the tubes mirror their text -->
+  <div class="src" aria-hidden="true">
+    <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+  </div>
+  <div class="tubes">
+    {placeholder.map((c) => <span class:list={["tube", { colon: c === ":" }]}>{c}</span>)}
+  </div>
+  <div class="base" aria-hidden="true"></div>
+  <div class="foot">
+    <span class="live" hidden={!opts.live}>● LIVE</span>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+  </div>
+</div>
+
+<style>
+  .nx {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Share Tech Mono", monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .src {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .tubes {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    padding: 0 10px;
+  }
+  /* glass envelope: rounded top, sheen, hex-mesh dots, dark pin collar */
+  .tubes :global(.tube) {
+    position: relative;
+    width: 30px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    line-height: 1;
+    color: var(--accent);
+    text-shadow:
+      0 0 6px var(--accent),
+      0 0 18px var(--accent),
+      0 0 30px color-mix(in srgb, var(--accent) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fg) 45%, transparent);
+    border-bottom: 5px solid color-mix(in srgb, var(--fg) 25%, #000);
+    border-radius: 14px 14px 5px 5px;
+    background-image:
+      radial-gradient(circle, color-mix(in srgb, var(--fg) 15%, transparent) 0.6px, transparent 1.2px),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--fg) 18%, transparent),
+        transparent 35%,
+        transparent 65%,
+        color-mix(in srgb, var(--fg) 8%, transparent)
+      );
+    background-size:
+      4px 4px,
+      100% 100%;
+    box-shadow:
+      inset 0 0 10px color-mix(in srgb, var(--fg) 12%, transparent),
+      inset 0 -6px 8px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .tubes :global(.tube.colon) {
+    width: 14px;
+    height: 56px;
+    font-size: 36px;
+    border-radius: 7px 7px 4px 4px;
+  }
+  .tubes :global(.tube.alpha) {
+    font-size: 24px;
+  }
+  .tubes :global(.sp) {
+    width: 6px;
+  }
+  /* wooden base with brass pin nubs */
+  .base {
+    width: 100%;
+    height: 16px;
+    margin-top: -1px;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(circle at 50% 35%, #e0b85c 0 1.5px, #8a6a2a 2px, transparent 2.6px),
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 2px, transparent 2px 9px);
+    background-size:
+      12px 16px,
+      auto;
+    border-radius: 3px;
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.12),
+      0 4px 10px rgba(0, 0, 0, 0.45);
+  }
+  .foot {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: color-mix(in srgb, var(--fg) 85%, transparent);
+  }
+  .foot > * {
+    margin-top: 6px;
+  }
+  .live {
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--accent);
+  }
+</style>
+
+<script>
+  import { mountDigital, formatHour, pad2 } from "../../lib/clock-runtime";
+
+  for (const el of document.querySelectorAll<HTMLElement>(".nx")) {
+    const tubes = el.querySelector<HTMLElement>(".tubes")!;
+    mountDigital(el, {
+      onTick: (p, { format }) => {
+        const { hour, suffix } = formatHour(p.hour, format);
+        const sec = el.dataset.seconds === "1" ? ":" + pad2(p.second) : "";
+        const chars = [...`${hour}:${pad2(p.minute)}${sec}${suffix}`];
+        // Rebuild only when the tube count changes (format/seconds override), else update text.
+        if (tubes.childElementCount !== chars.length) {
+          tubes.replaceChildren(
+            ...chars.map((c) => {
+              const s = document.createElement("span");
+              s.className = c === " " ? "sp" : c === ":" ? "tube colon" : /[A-Z]/.test(c) ? "tube alpha" : "tube";
+              s.textContent = c === " " ? "" : c;
+              return s;
+            }),
+          );
+          return;
+        }
+        chars.forEach((c, i) => {
+          const s = tubes.children[i];
+          if (c !== " " && s.textContent !== c) s.textContent = c;
+        });
+      },
+    });
+  }
+</script>

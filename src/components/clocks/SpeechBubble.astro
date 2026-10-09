@@ -1,0 +1,115 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="spb"
+  data-clock="speech-bubble"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="bubble">
+    <span class="live" hidden={!opts.live}>● LIVE</span>
+    <div class="line">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+      <svg class="heart" viewBox="0 0 24 22" width="20" height="18" aria-hidden="true">
+        <path d="M12 21 C 2 14, 0 8, 3.5 4.5 C 6.5 1.5, 10.5 2.5, 12 5.5 C 13.5 2.5, 17.5 1.5, 20.5 4.5 C 24 8, 22 14, 12 21 Z" />
+      </svg>
+    </div>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+  </div>
+</div>
+
+<style>
+  .spb {
+    width: 260px;
+    padding-bottom: 18px; /* room for the tail */
+    box-sizing: border-box;
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Hachi Maru Pop", system-ui, sans-serif;
+    color: var(--fg);
+  }
+  .bubble {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 240px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    padding: 14px 18px 12px;
+    background: var(--bg);
+    border: 3px solid var(--fg);
+    border-radius: 28px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    line-height: 1;
+  }
+  /* tail: a rotated square that shares the bubble's border on two sides */
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 34px;
+    bottom: -13px;
+    width: 20px;
+    height: 20px;
+    background: var(--bg);
+    border-right: 3px solid var(--fg);
+    border-bottom: 3px solid var(--fg);
+    transform: rotate(45deg);
+    border-bottom-right-radius: 4px;
+  }
+  .live {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .hm {
+    font-size: 40px;
+  }
+  .sec {
+    font-size: 18px;
+    color: color-mix(in srgb, var(--fg) 65%, transparent);
+  }
+  .heart {
+    fill: var(--accent);
+    align-self: center;
+    margin-left: 2px;
+    animation: spb-bounce 2.4s ease-in-out infinite;
+  }
+  @keyframes spb-bounce {
+    0%,
+    70%,
+    100% {
+      transform: translateY(0);
+    }
+    85% {
+      transform: translateY(-5px) scale(1.1);
+    }
+  }
+  .date {
+    font-size: 14px;
+    margin-top: 4px;
+    color: color-mix(in srgb, var(--fg) 80%, transparent);
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".spb")) mountDigital(el);
+</script>

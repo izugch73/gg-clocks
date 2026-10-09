@@ -1,0 +1,160 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Cheese blobs: soft radial gradients overlapping on the sauce.
+const cheese = [
+  [72, 74, 44],
+  [128, 70, 42],
+  [84, 128, 44],
+  [126, 126, 42],
+  [100, 96, 40],
+  [60, 108, 36],
+];
+---
+
+<div
+  class="pz"
+  data-clock="pizza-dial"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <span class="hm" hidden>--:--</span>
+  <svg viewBox="0 0 200 200" width="184" height="184" aria-hidden="true">
+    <defs>
+      <linearGradient id="pz-crust" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" class="crust-a" />
+        <stop offset="1" class="crust-b" />
+      </linearGradient>
+      <radialGradient id="pz-cheese">
+        <stop offset="0" class="cheese-a" />
+        <stop offset="0.6" class="cheese-a" stop-opacity="0.75" />
+        <stop offset="1" class="cheese-a" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="100" cy="100" r="94" class="crust" fill="url(#pz-crust)"></circle>
+    <circle cx="100" cy="100" r="82" class="sauce"></circle>
+    {cheese.map(([x, y, r]) => <circle cx={x} cy={y} r={r} fill="url(#pz-cheese)" />)}
+    {Array.from({ length: 12 }).map((_, i) => (
+      <line x1="100" y1="100" x2="100" y2="6" class="cut" transform={`rotate(${i * 30} 100 100)`} />
+    ))}
+    {Array.from({ length: 12 }).map((_, i) => (
+      <g transform={`rotate(${i * 30} 100 100)`}>
+        <circle cx="100" cy="32" r="8" class="pep" />
+        <circle cx="97" cy="29" r="1.6" class="pep-dot" />
+        <circle cx="103" cy="34" r="1.2" class="pep-dot" />
+      </g>
+    ))}
+    <g class="hand-h">
+      <line x1="100" y1="110" x2="100" y2="60" class="handle" />
+      <circle cx="100" cy="54" r="7" class="wheel" />
+      <circle cx="100" cy="54" r="2" class="wheel-pin" />
+    </g>
+    <g class="hand-m">
+      <line x1="100" y1="114" x2="100" y2="40" class="handle" />
+      <circle cx="100" cy="32" r="9" class="wheel" />
+      <circle cx="100" cy="32" r="2.4" class="wheel-pin" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1="100" y1="118" x2="100" y2="22" class="hand-sec" />
+    </g>
+    <circle cx="100" cy="100" r="5" class="pin"></circle>
+  </svg>
+  <span class="date" hidden={!opts.date}>--/-- ---</span>
+</div>
+
+<style>
+  .pz {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-family: "Fredoka", system-ui, sans-serif;
+  }
+  .pz svg {
+    display: block;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+  }
+  .crust-a {
+    stop-color: color-mix(in srgb, var(--accent) 80%, #fff);
+  }
+  .crust-b {
+    stop-color: color-mix(in srgb, var(--accent) 65%, var(--fg));
+  }
+  .sauce {
+    fill: var(--bg);
+  }
+  .cheese-a {
+    stop-color: color-mix(in srgb, var(--accent) 45%, #fff);
+  }
+  .cut {
+    stroke: color-mix(in srgb, var(--fg) 55%, var(--accent));
+    stroke-width: 1.5;
+    opacity: 0.8;
+  }
+  .pep {
+    fill: var(--fg);
+  }
+  .pep-dot {
+    fill: color-mix(in srgb, var(--fg) 60%, #000);
+  }
+  .handle {
+    stroke: var(--fg);
+    stroke-width: 6;
+    stroke-linecap: round;
+  }
+  .wheel {
+    fill: var(--accent);
+    stroke: var(--fg);
+    stroke-width: 2.5;
+  }
+  .wheel-pin {
+    fill: var(--fg);
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+  .pin {
+    fill: var(--fg);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 100px 100px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .date {
+    display: inline-block;
+    padding: 3px 14px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--fg);
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+</style>
+
+<script>
+  import { mountAnalog, mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".pz")) {
+    mountAnalog(el);
+    mountDigital(el);
+  }
+</script>

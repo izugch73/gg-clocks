@@ -6,6 +6,7 @@ const { opts } = Astro.props;
 
 <div
   class="led"
+  data-clock="digital-led"
   data-format={opts.format}
   data-seconds={opts.seconds ? "1" : "0"}
   data-date={opts.date ? "1" : "0"}

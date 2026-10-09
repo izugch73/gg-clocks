@@ -15,7 +15,7 @@ if (!meta) return Astro.redirect("/");
 const opts = { ...DEFAULTS, ...meta.defaults };
 ---
 
-<Embed title={`${meta.name} | embed`}>
+<Embed title={`${meta.name} | embed`} fonts={meta.fonts}>
   <ClockSwitch slug={meta.slug} opts={opts} />
 </Embed>
 
@@ -40,9 +40,8 @@ const opts = { ...DEFAULTS, ...meta.defaults };
       if (["0", "false", "no"].includes(v)) return false;
       return null;
     }
-    const ROOTS =
-      ".di,.sb,.ms,.br,.on,.mt,.st,.ps,.gf,.ch,.led,.ng,.tm,.px,.dm,.cs,.am,.ac,.ar,.ad";
-    const el = document.querySelector(ROOTS);
+    // Every clock component marks its root element with data-clock="<slug>".
+    const el = document.querySelector("[data-clock]");
     if (!el) return;
     // Toggle the main element plus any decoration tied to it (separators,
     // rules, bullets) that components mark with data-with="date|live|sec".

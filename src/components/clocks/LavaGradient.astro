@@ -1,0 +1,128 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="lv"
+  data-clock="lava-gradient"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="live" hidden={!opts.live}>● LIVE</div>
+  <div class="stack">
+    <div class="heat" aria-hidden="true"><span class="heat-hm">--:--</span><span class="heat-sec" data-with="sec" hidden={!opts.seconds}>--</span></div>
+    <div class="time molten"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+  </div>
+  <div class="date" hidden={!opts.date}>--/-- ---</div>
+</div>
+
+<style>
+  .lv {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 10px;
+    background: var(--bg);
+    font-family: "Anton", "Impact", sans-serif;
+    text-align: center;
+  }
+  .stack {
+    position: relative;
+    line-height: 1;
+  }
+  .time,
+  .heat {
+    font-size: 60px;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sec,
+  .heat-sec {
+    font-size: 28px;
+    margin-left: 6px;
+  }
+  /* molten colour flowing through the glyphs; gradient is periodic so the loop is seamless */
+  .molten {
+    position: relative;
+    background-image: linear-gradient(
+      100deg,
+      var(--accent),
+      var(--fg),
+      #ff2200,
+      var(--accent),
+      var(--fg),
+      #ff2200,
+      var(--accent)
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(20, 0, 0, 0.75);
+    animation: lv-flow 6s linear infinite;
+  }
+  .heat {
+    position: absolute;
+    inset: 0;
+    color: var(--accent);
+    filter: blur(10px);
+    opacity: 0.6;
+    animation: lv-breathe 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .date {
+    margin-top: 6px;
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    color: var(--fg);
+    text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  .live {
+    margin-bottom: 2px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent);
+  }
+  @keyframes lv-flow {
+    from {
+      background-position: 0% 50%;
+    }
+    to {
+      background-position: 100% 50%;
+    }
+  }
+  @keyframes lv-breathe {
+    50% {
+      opacity: 0.4;
+      filter: blur(14px);
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".lv")) {
+    const heatHm = el.querySelector<HTMLElement>(".heat-hm");
+    const heatSec = el.querySelector<HTMLElement>(".heat-sec");
+    const hm = el.querySelector<HTMLElement>(".hm");
+    const sec = el.querySelector<HTMLElement>(".sec");
+    mountDigital(el, {
+      onTick: () => {
+        // The blurred heat layer mirrors the live text so the glow follows the digits.
+        if (heatHm && hm) heatHm.textContent = hm.textContent;
+        if (heatSec && sec) heatSec.textContent = sec.textContent;
+      },
+    });
+  }
+</script>

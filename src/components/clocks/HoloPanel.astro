@@ -1,0 +1,178 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="hp"
+  data-clock="holo-panel"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <span class="corner tl" aria-hidden="true"></span>
+    <span class="corner tr" aria-hidden="true"></span>
+    <span class="corner bl" aria-hidden="true"></span>
+    <span class="corner br" aria-hidden="true"></span>
+    <div class="scan" aria-hidden="true"></div>
+    <div class="sweep" aria-hidden="true"></div>
+    <div class="head">
+      <span class="micro">SYS.TIME</span>
+      <span class="live" hidden={!opts.live}>● LIVE</span>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+    </div>
+    <div class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+  </div>
+</div>
+
+<style>
+  .hp {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Orbitron", sans-serif;
+  }
+  .panel {
+    position: relative;
+    width: 260px;
+    padding: 12px 18px 14px;
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+    border: 1px solid var(--accent);
+    box-shadow:
+      0 0 12px color-mix(in srgb, var(--accent) 35%, transparent),
+      inset 0 0 20px color-mix(in srgb, var(--accent) 12%, transparent);
+    overflow: hidden;
+    animation: hp-jolt 5s steps(1, end) infinite;
+  }
+  .corner {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--accent);
+  }
+  .tl {
+    top: 3px;
+    left: 3px;
+    border-right: 0;
+    border-bottom: 0;
+  }
+  .tr {
+    top: 3px;
+    right: 3px;
+    border-left: 0;
+    border-bottom: 0;
+  }
+  .bl {
+    bottom: 3px;
+    left: 3px;
+    border-right: 0;
+    border-top: 0;
+  }
+  .br {
+    bottom: 3px;
+    right: 3px;
+    border-left: 0;
+    border-top: 0;
+  }
+  .scan {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      color-mix(in srgb, var(--accent) 10%, transparent) 3px 4px
+    );
+  }
+  .sweep {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.7;
+    animation: hp-sweep 4s linear infinite;
+  }
+  .head {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--fg);
+    margin-bottom: 6px;
+  }
+  .micro {
+    opacity: 0.8;
+  }
+  .live {
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--accent);
+  }
+  .date {
+    margin-left: auto;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .time {
+    position: relative;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    color: var(--accent);
+    text-shadow:
+      0 0 6px var(--accent),
+      0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
+    animation: hp-split 5s steps(1, end) infinite;
+  }
+  .sec {
+    margin-left: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    opacity: 0.85;
+  }
+  @keyframes hp-sweep {
+    from {
+      transform: translateY(-2px);
+    }
+    to {
+      transform: translateY(110px);
+    }
+  }
+  /* 120ms glitch every 5s: panel shifts 2px, digits get an RGB split */
+  @keyframes hp-jolt {
+    0% {
+      transform: translate(2px, 0);
+    }
+    2.4% {
+      transform: none;
+    }
+  }
+  @keyframes hp-split {
+    0% {
+      text-shadow:
+        -2px 0 rgba(255, 0, 80, 0.9),
+        2px 0 rgba(0, 120, 255, 0.9);
+    }
+    2.4% {
+      text-shadow:
+        0 0 6px var(--accent),
+        0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".hp")) mountDigital(el);
+</script>

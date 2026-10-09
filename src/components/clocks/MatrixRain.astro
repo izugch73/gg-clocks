@@ -1,0 +1,146 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+
+// 12 columns of half-width katakana + digits; deterministic so SSR is stable.
+const GLYPHS = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ0123456789ｦﾝ";
+let seed = 7;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+const columns = Array.from({ length: 12 }, () => ({
+  text: Array.from({ length: 22 }, () => GLYPHS[Math.floor(rnd() * GLYPHS.length)]).join(""),
+  dur: (5 + rnd() * 6).toFixed(1),
+  delay: (-rnd() * 11).toFixed(1),
+}));
+---
+
+<div
+  class="mx"
+  data-clock="matrix-rain"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <div class="rain" aria-hidden="true">
+      {columns.map((c) => <span class="col" style={`--d:${c.dur}s;--o:${c.delay}s`}>{c.text}</span>)}
+    </div>
+    <div class="front">
+      <div class="live" hidden={!opts.live}>● LIVE</div>
+      <div class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+      <div class="date" hidden={!opts.date}>--/-- ---</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .mx {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Share Tech Mono", monospace;
+  }
+  .panel {
+    position: relative;
+    width: 280px;
+    height: 130px;
+    background: var(--bg);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .rain {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-around;
+    padding: 0 4px;
+    pointer-events: none;
+  }
+  /* each column is vertical text; the gradient fades the tail and brightens the head */
+  .col {
+    writing-mode: vertical-lr;
+    text-orientation: upright;
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    background-image: linear-gradient(to bottom, transparent 0, var(--accent) 70%, var(--fg) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    opacity: 0.7;
+    animation: mx-fall var(--d) linear var(--o) infinite;
+  }
+  @keyframes mx-fall {
+    from {
+      transform: translateY(-300px);
+    }
+    to {
+      transform: translateY(140px);
+    }
+  }
+  .front {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--fg);
+    line-height: 1;
+  }
+  .live {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    text-shadow:
+      0 0 6px var(--bg),
+      0 0 10px var(--accent);
+  }
+  .time {
+    font-size: 40px;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    text-shadow:
+      0 0 4px var(--bg),
+      0 0 10px var(--bg),
+      0 0 22px var(--bg),
+      0 0 30px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  .sec {
+    font-size: 20px;
+    margin-left: 6px;
+    opacity: 0.85;
+  }
+  .date {
+    margin-top: 8px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    opacity: 0.9;
+    text-shadow:
+      0 0 4px var(--bg),
+      0 0 12px var(--bg);
+  }
+  .date::after {
+    content: "▍";
+    margin-left: 2px;
+    color: var(--accent);
+    animation: mx-caret 1s steps(2, end) infinite;
+  }
+  @keyframes mx-caret {
+    50% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".mx")) mountDigital(el);
+</script>

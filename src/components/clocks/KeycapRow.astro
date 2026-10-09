@@ -1,0 +1,164 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// SSR placeholders; the script re-mirrors .hm / .date into keycaps on every tick.
+const hmKeys = ["-", "-", ":", "-", "-"];
+const dateKeys = ["-", "-", "/", "-", "-"];
+---
+
+<div
+  class="kr"
+  data-clock="keycap-row"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <span class="hm vh">--:--</span>
+  <span class="date vh" hidden={!opts.date}>--/-- ---</span>
+  <div class="row main">
+    <span class="keys hm-keys">
+      {hmKeys.map((c) => <span class={c === ":" ? "key narrow" : "key"}>{c}</span>)}
+    </span>
+    <span class="key small sec" hidden={!opts.seconds}>--</span>
+    <span class="key small live" hidden={!opts.live}>LIVE</span>
+  </div>
+  <div class="row sub" data-with="date" hidden={!opts.date}>
+    <span class="keys date-keys">
+      {dateKeys.map((c) => <span class={c === "/" ? "key narrow" : "key"}>{c}</span>)}
+    </span>
+  </div>
+</div>
+
+<style>
+  .kr {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-family: "Roboto", system-ui, sans-serif;
+    font-weight: 700;
+    color: var(--fg);
+  }
+  .vh {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .row,
+  .keys {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 42px;
+    border-radius: 7px;
+    background: var(--bg);
+    font-size: 22px;
+    line-height: 1;
+    /* bevel: dark lower edge in accent + soft inner highlight */
+    box-shadow:
+      0 5px 0 var(--accent),
+      0 7px 10px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  }
+  .key.narrow {
+    width: 20px;
+  }
+  .key.sp {
+    width: 8px;
+    background: transparent;
+    box-shadow: none;
+  }
+  .key.small {
+    height: 34px;
+    width: 42px;
+    font-size: 15px;
+    letter-spacing: 1px;
+    box-shadow:
+      0 4px 0 var(--accent),
+      0 6px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+  .key.live {
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    box-shadow:
+      0 4px 0 color-mix(in srgb, var(--accent) 60%, #000),
+      0 6px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  .sub .key {
+    width: 24px;
+    height: 26px;
+    font-size: 13px;
+    border-radius: 5px;
+    box-shadow:
+      0 3px 0 var(--accent),
+      0 5px 6px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+  .sub .key.narrow {
+    width: 16px;
+  }
+  .sub .key.sp {
+    width: 6px;
+  }
+  .sub .keys {
+    gap: 4px;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+
+  // One keycap per character; spaces become invisible spacers. New keys are
+  // cloned from an SSR key so they keep Astro's scoped-style attribute.
+  function mirror(src: HTMLElement | null, dst: HTMLElement | null, proto: Element | null) {
+    if (!src || !dst || !proto) return;
+    const chars = Array.from(src.textContent ?? "");
+    if (dst.childElementCount !== chars.length) {
+      dst.replaceChildren(...chars.map(() => proto.cloneNode(false)));
+    }
+    chars.forEach((c, i) => {
+      const key = dst.children[i] as HTMLElement;
+      const sp = c === " ";
+      key.textContent = sp ? "" : c;
+      key.classList.toggle("sp", sp);
+      key.classList.toggle("narrow", c === ":" || c === "/");
+    });
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>(".kr")) {
+    const hm = el.querySelector<HTMLElement>(".hm");
+    const date = el.querySelector<HTMLElement>(".date");
+    const hmKeys = el.querySelector<HTMLElement>(".hm-keys");
+    const dateKeys = el.querySelector<HTMLElement>(".date-keys");
+    const hmProto = hmKeys?.firstElementChild ?? null;
+    const dateProto = dateKeys?.firstElementChild ?? null;
+    mountDigital(el, {
+      onTick: () => {
+        mirror(hm, hmKeys, hmProto);
+        mirror(date, dateKeys, dateProto);
+      },
+    });
+  }
+</script>

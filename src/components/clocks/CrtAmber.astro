@@ -1,0 +1,151 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="ca"
+  data-clock="crt-amber"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="frame">
+    <div class="tube">
+      <div class="phosphor">
+        <div class="live" hidden={!opts.live}>&gt; ON AIR_</div>
+        <div class="time">
+          <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>:--</span><span class="ampm"></span>
+        </div>
+        <div class="date" hidden={!opts.date}>--/-- ---</div>
+      </div>
+      <div class="scan" aria-hidden="true"></div>
+      <div class="band" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ca {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "VT323", monospace;
+  }
+  /* beige plastic housing */
+  .frame {
+    width: 260px;
+    padding: 8px;
+    background: var(--fg);
+    border-radius: 14px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+      0 8px 18px rgba(0, 0, 0, 0.35);
+  }
+  /* curved glass: elliptical corners + heavy vignette */
+  .tube {
+    position: relative;
+    overflow: hidden;
+    padding: 10px 14px 8px;
+    background: var(--bg);
+    border-radius: 28px / 36px;
+    box-shadow:
+      inset 0 0 30px rgba(0, 0, 0, 0.9),
+      inset 0 0 2px rgba(0, 0, 0, 1);
+    text-align: center;
+    color: var(--accent);
+  }
+  .phosphor {
+    position: relative;
+    z-index: 1;
+    animation: ca-flicker 4s ease-in-out infinite;
+    text-shadow:
+      0 0 3px var(--accent),
+      0 0 12px color-mix(in srgb, var(--accent) 60%, transparent),
+      0 0 28px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .live {
+    font-size: 18px;
+    line-height: 1;
+    text-align: left;
+    margin-bottom: 2px;
+    opacity: 0.85;
+  }
+  .time {
+    font-size: 50px;
+    line-height: 0.9;
+    white-space: nowrap;
+  }
+  .sec,
+  .ampm {
+    font-size: 28px;
+    opacity: 0.85;
+  }
+  .ampm:empty {
+    display: none;
+  }
+  .date {
+    margin-top: 4px;
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: 1px;
+    opacity: 0.9;
+  }
+  .scan {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.25) 2px 3px);
+  }
+  /* slow rolling brighter band (classic CRT refresh bar) */
+  .band {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 36px;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--accent) 10%, transparent) 50%,
+      transparent
+    );
+    animation: ca-roll 12s linear infinite;
+  }
+  @keyframes ca-roll {
+    from {
+      transform: translateY(-40px);
+    }
+    to {
+      transform: translateY(140px);
+    }
+  }
+  @keyframes ca-flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    47% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.97;
+    }
+    53% {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".ca")) mountDigital(el, { renderSeconds: (s) => ":" + s });
+</script>

@@ -1,0 +1,179 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const C = 100;
+// 12 tiny hour marks on the label edge
+const marks = Array.from({ length: 12 }).map((_, i) => {
+  const a = (i / 12) * Math.PI * 2;
+  return { x: C + Math.sin(a) * 33, y: C - Math.cos(a) * 33 };
+});
+const grooves = [48, 56, 64, 72, 80, 88];
+---
+
+<div
+  class="vr"
+  data-clock="vinyl-record"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+    <circle cx={C} cy={C} r="98" class="platter" />
+    {/* Rotating sheen: two soft wedges spinning like light on a turning record */}
+    <g class="spin">
+      <path d="M100 100 L100 2 A98 98 0 0 1 160 20 Z" class="sheen" />
+      <path d="M100 100 L100 198 A98 98 0 0 1 40 180 Z" class="sheen" />
+    </g>
+    {grooves.map((r) => (
+      <circle cx={C} cy={C} r={r} class="groove" />
+    ))}
+    <circle cx={C} cy={C} r="38" class="label" />
+    {marks.map((m) => (
+      <circle cx={m.x} cy={m.y} r="1.3" class="mark" />
+    ))}
+    <circle cx={C} cy={C} r="3" class="hole" />
+
+    <g class="hand-h">
+      <rect x="98" y="58" width="4" height="46" rx="2" class="hand" />
+    </g>
+    <g class="hand-m">
+      <rect x="98.75" y="30" width="2.5" height="74" rx="1.25" class="hand" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1={C} y1="118" x2={C} y2="16" class="hand-sec" />
+      <circle cx={C} cy="121" r="3.5" class="counter" />
+    </g>
+    <circle cx={C} cy={C} r="4" class="pin" />
+  </svg>
+  <div class="text">
+    <span class="live" hidden={!opts.live}>ON AIR</span>
+    <span class="row"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></span>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+  </div>
+</div>
+
+<style>
+  .vr {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Bebas Neue", Impact, sans-serif;
+  }
+  .vr svg {
+    display: block;
+  }
+  .platter {
+    fill: var(--bg);
+    stroke: color-mix(in srgb, var(--fg) 15%, transparent);
+    stroke-width: 1;
+  }
+  .sheen {
+    fill: white;
+    opacity: 0.06;
+  }
+  .spin {
+    transform-origin: 100px 100px;
+    animation: vr-spin 6s linear infinite;
+  }
+  .groove {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1;
+    opacity: 0.08;
+  }
+  .label {
+    fill: var(--accent);
+  }
+  .mark {
+    fill: var(--fg);
+    opacity: 0.9;
+  }
+  .hole {
+    fill: var(--bg);
+    stroke: color-mix(in srgb, var(--fg) 40%, transparent);
+    stroke-width: 1;
+  }
+  .hand {
+    fill: var(--fg);
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+  .counter {
+    fill: var(--accent);
+  }
+  .pin {
+    fill: var(--fg);
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 100px 100px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  /* Small readout on the lower half of the label */
+  .text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 62px;
+    height: 76px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    pointer-events: none;
+    color: var(--fg);
+    line-height: 1;
+  }
+  .live {
+    position: absolute;
+    top: 8px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    opacity: 0.85;
+  }
+  .row {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 15px;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .row .sec {
+    font-size: 10px;
+    opacity: 0.8;
+  }
+  .date {
+    margin-top: 2px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    opacity: 0.8;
+  }
+  @keyframes vr-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog, mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".vr")) {
+    mountAnalog(el);
+    mountDigital(el);
+  }
+</script>

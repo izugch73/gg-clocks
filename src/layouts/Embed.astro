@@ -1,8 +1,12 @@
 ---
+import { googleFontsHref } from "../data/fonts";
 type Props = {
   title?: string;
+  /** Google Fonts families this clock uses (see src/data/fonts.ts). */
+  fonts?: string[];
 };
-const { title = "Clock" } = Astro.props;
+const { title = "Clock", fonts } = Astro.props;
+const fontsHref = googleFontsHref(fonts);
 ---
 
 <!doctype html>
@@ -11,6 +15,7 @@ const { title = "Clock" } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
     <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
     <style is:global>
       :root {
@@ -39,10 +44,7 @@ const { title = "Clock" } = Astro.props;
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Audiowide&family=Plus+Jakarta+Sans:wght@500;700;800&family=Press+Start+2P&family=Roboto:wght@500;700;900&family=Share+Tech+Mono&display=swap"
-    />
+    <link rel="stylesheet" href={fontsHref} />
   </head>
   <body>
     <slot />

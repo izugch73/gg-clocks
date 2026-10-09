@@ -1,0 +1,123 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="sr"
+  data-clock="speedrun-split"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <div class="title">
+      <span>Real Time</span>
+      <span class="live" hidden={!opts.live}>● LIVE</span>
+    </div>
+    <div class="main">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span><span class="ampm"></span>
+    </div>
+    <div class="split" data-with="date" hidden={!opts.date}>
+      <span class="name">Today</span>
+      <span class="date">--/-- ---</span>
+    </div>
+    <div class="split best">
+      <span class="name">Best</span>
+      <span class="gold">—</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .sr {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "IBM Plex Mono", "Menlo", monospace;
+    color: var(--fg);
+  }
+  .panel {
+    width: 260px;
+    background: var(--bg);
+    border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
+    border-radius: 4px;
+    padding: 0 0 4px;
+    overflow: hidden;
+  }
+  .title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-variant: small-caps;
+    color: color-mix(in srgb, var(--fg) 80%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--fg) 14%, transparent),
+      color-mix(in srgb, var(--fg) 4%, transparent)
+    );
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .live {
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .main {
+    display: flex;
+    align-items: baseline;
+    padding: 6px 12px 4px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  /* Vertical accent -> fg gradient text, LiveSplit style. */
+  .hm,
+  .sec,
+  .ampm {
+    background: linear-gradient(180deg, var(--accent) 0%, var(--fg) 85%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hm {
+    font-size: 36px;
+  }
+  .sec {
+    font-size: 20px;
+    margin-left: 4px;
+  }
+  .ampm {
+    font-size: 12px;
+    margin-left: 4px;
+  }
+  .split {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 3px 12px;
+    font-size: 11px;
+    color: color-mix(in srgb, var(--fg) 55%, transparent);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .name {
+    letter-spacing: 1px;
+  }
+  .gold {
+    color: #e2b84a;
+    font-weight: 700;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".sr")) mountDigital(el, { renderSeconds: (s) => "." + s });
+</script>

@@ -1,0 +1,194 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="dw"
+  data-clock="digital-wristwatch"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="strap" aria-hidden="true"></div>
+  <div class="case">
+    <span class="btn l" aria-hidden="true"></span>
+    <span class="btn r" aria-hidden="true"></span>
+    <div class="plate">
+      <span class="lbl tl">LIGHT</span>
+      <span class="lbl tr">ALARM</span>
+      <span class="lbl bl">MODE</span>
+      <span class="lbl br">ADJUST</span>
+      <div class="lcd">
+        <div class="cells">
+          <span class="date" hidden={!opts.date}>--- --/--</span>
+          <span class="live" hidden={!opts.live}>● LIVE</span>
+        </div>
+        <div class="digits">
+          <span class="main">
+            <span class="ghost ghost-hm" aria-hidden="true">88:88</span>
+            <span class="hm">--:--</span>
+          </span>
+          <span class="small" data-with="sec" hidden={!opts.seconds}>
+            <span class="ghost ghost-sec" aria-hidden="true">88</span>
+            <span class="sec">--</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="strap" aria-hidden="true"></div>
+</div>
+
+<style>
+  .dw {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    width: 230px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Share Tech Mono", "Menlo", monospace;
+  }
+  .strap {
+    width: 110px;
+    height: 14px;
+    background: color-mix(in srgb, var(--bg) 80%, #444);
+    border-radius: 4px 4px 0 0;
+  }
+  .strap:last-child {
+    border-radius: 0 0 4px 4px;
+  }
+  .case {
+    position: relative;
+    width: 230px;
+    height: 122px;
+    padding: 10px 14px;
+    background: var(--bg);
+    clip-path: polygon(10% 0, 90% 0, 100% 18%, 100% 82%, 90% 100%, 10% 100%, 0 82%, 0 18%);
+  }
+  .btn {
+    position: absolute;
+    top: 50%;
+    width: 8px;
+    height: 20px;
+    margin-top: -10px;
+    background: color-mix(in srgb, var(--bg) 60%, #888);
+    border-radius: 2px;
+  }
+  .btn.l {
+    left: 1px;
+  }
+  .btn.r {
+    right: 1px;
+  }
+  .plate {
+    position: relative;
+    height: 100%;
+    padding: 14px 12px 12px;
+    border-radius: 8px;
+    background: linear-gradient(100deg, #c9c9c9, #9f9f9f 30%, #d6d6d6 55%, #a6a6a6 80%, #c4c4c4);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  }
+  .lbl {
+    position: absolute;
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .tl {
+    top: 4px;
+    left: 8px;
+  }
+  .tr {
+    top: 4px;
+    right: 8px;
+  }
+  .bl {
+    bottom: 3px;
+    left: 8px;
+  }
+  .br {
+    bottom: 3px;
+    right: 8px;
+  }
+  .lcd {
+    height: 100%;
+    padding: 4px 8px 6px;
+    border-radius: 3px;
+    background: #b7c3a4;
+    color: var(--fg);
+    box-shadow:
+      inset 0 2px 5px rgba(0, 0, 0, 0.45),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .cells {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    letter-spacing: 1px;
+    line-height: 1;
+    min-height: 0;
+  }
+  .live {
+    margin-left: auto;
+  }
+  .digits {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 6px;
+    line-height: 1;
+    margin-top: auto;
+  }
+  .main,
+  .small {
+    position: relative;
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+  }
+  .main {
+    font-size: 36px;
+  }
+  .small {
+    font-size: 18px;
+  }
+  [data-format="12"] .main {
+    font-size: 26px;
+  }
+  .ghost {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0.08;
+    pointer-events: none;
+  }
+  .hm,
+  .sec {
+    position: relative;
+  }
+</style>
+
+<script>
+  import { mountDigital, weekday } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".dw")) {
+    const hm = el.querySelector<HTMLElement>(".hm");
+    const ghostHm = el.querySelector<HTMLElement>(".ghost-hm");
+    mountDigital(el, {
+      renderDate: (p, lang) => `${weekday(p.weekdayEn, lang)} ${p.month}-${p.day}`,
+      // Inactive "8" segments must follow the hm text (12h adds " PM").
+      onTick: () => {
+        if (hm && ghostHm) ghostHm.textContent = (hm.textContent ?? "").replace(/\d/g, "8");
+      },
+    });
+  }
+</script>

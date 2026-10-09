@@ -1,0 +1,145 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="cef"
+  data-clock="cat-ear-frame"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg class="ear l" viewBox="0 0 40 36" width="40" height="36" aria-hidden="true">
+    <path d="M4 34 L8 3 L37 24 Z" class="outer" />
+    <path d="M12 29 L13 12 L29 24 Z" class="inner" />
+  </svg>
+  <svg class="ear r" viewBox="0 0 40 36" width="40" height="36" aria-hidden="true">
+    <path d="M36 34 L32 3 L3 24 Z" class="outer" />
+    <path d="M28 29 L27 12 L11 24 Z" class="inner" />
+  </svg>
+  <svg class="tail" viewBox="0 0 40 60" width="40" height="60" aria-hidden="true">
+    <path d="M4 56 C 6 40, 30 42, 28 28 C 26 16, 10 14, 8 24" />
+  </svg>
+  <div class="card">
+    <div class="row">
+      <span class="paw" aria-hidden="true">ฅ</span>
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+    <div class="sub">
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+      <span class="live" hidden={!opts.live}>● LIVE</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .cef {
+    position: relative;
+    width: 220px;
+    height: 130px;
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Kosugi Maru", system-ui, sans-serif;
+    color: var(--fg);
+  }
+  .card {
+    position: absolute;
+    left: 0;
+    top: 24px;
+    width: 190px;
+    height: 100px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: var(--bg);
+    border: 3px solid var(--fg);
+    border-radius: 24px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+    z-index: 1;
+  }
+  .ear {
+    position: absolute;
+    top: 0;
+    z-index: 0;
+  }
+  .ear.l {
+    left: 16px;
+  }
+  .ear.r {
+    left: 134px;
+  }
+  .ear .outer {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 3;
+    stroke-linejoin: round;
+  }
+  .ear .inner {
+    fill: var(--accent);
+  }
+  .tail {
+    position: absolute;
+    left: 178px;
+    top: 58px;
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transform-origin: 4px 56px;
+    animation: cef-wag 3s ease-in-out infinite alternate;
+  }
+  @keyframes cef-wag {
+    from {
+      transform: rotate(-10deg);
+    }
+    to {
+      transform: rotate(10deg);
+    }
+  }
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .paw {
+    font-size: 18px;
+    color: var(--accent);
+    margin-right: 2px;
+  }
+  .hm {
+    font-size: 40px;
+  }
+  .sec {
+    font-size: 18px;
+    color: color-mix(in srgb, var(--fg) 65%, transparent);
+  }
+  .sub {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.2;
+    color: color-mix(in srgb, var(--fg) 75%, transparent);
+  }
+  .live {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".cef")) mountDigital(el);
+</script>

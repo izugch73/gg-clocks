@@ -1,0 +1,108 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="gst"
+  data-clock="giant-stack"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="wrap">
+    <!-- .hm keeps the canonical HH:MM for the runtime; the big digits are split from it -->
+    <span class="hm sr">--:--</span>
+    <div class="stack" aria-hidden="true">
+      <span class="hh">--</span>
+      <span class="mm">--</span>
+    </div>
+    <div class="side">
+      <span class="live" hidden={!opts.live}>LIVE</span>
+      <span class="sec" hidden={!opts.seconds}>--</span>
+      <span class="ampm"></span>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .gst {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Anton", "Arial Narrow", sans-serif;
+    color: var(--fg);
+  }
+  .wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 6px;
+  }
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .stack {
+    display: flex;
+    flex-direction: column;
+    font-size: 80px;
+    line-height: 0.8;
+    font-variant-numeric: tabular-nums;
+    /* drop-shadow follows the painted strokes, so hollow digits stay hollow */
+    filter: drop-shadow(4px 4px 0 var(--bg));
+  }
+  .hh {
+    color: var(--fg);
+  }
+  .mm {
+    color: transparent;
+    -webkit-text-stroke: 2px var(--accent);
+  }
+  .side {
+    display: flex;
+    writing-mode: vertical-rl;
+    gap: 10px;
+    padding-top: 4px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .live {
+    color: var(--accent);
+  }
+  .sec {
+    opacity: 0.7;
+  }
+  .ampm:empty {
+    display: none;
+  }
+  .date {
+    opacity: 0.75;
+  }
+</style>
+
+<script>
+  import { mountDigital, formatHour, pad2 } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".gst")) {
+    const hh = el.querySelector<HTMLElement>(".hh");
+    const mm = el.querySelector<HTMLElement>(".mm");
+    mountDigital(el, {
+      onTick: (p, { format }) => {
+        if (hh) hh.textContent = formatHour(p.hour, format).hour;
+        if (mm) mm.textContent = pad2(p.minute);
+      },
+    });
+  }
+</script>

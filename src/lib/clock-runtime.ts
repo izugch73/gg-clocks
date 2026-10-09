@@ -173,7 +173,11 @@ export function mountDigital(el: HTMLElement, options: DigitalOptions = {}): voi
   const lang = readLang(el);
   const format = readFormat(el);
   const hmEl = el.querySelector<HTMLElement>(hmSelector);
-  const secEl = el.querySelector<HTMLElement>(secSelector);
+  // Analog clocks mark the seconds hand `<g class="hand-s sec">` so the URL
+  // override can hide it; that group must never receive the seconds text.
+  const secEl = Array.from(el.querySelectorAll<HTMLElement>(secSelector)).find(
+    (node) => !node.classList.contains("hand-s"),
+  ) ?? null;
   const dateEl = el.querySelector<HTMLElement>(dateSelector);
   const ampmEl = el.querySelector<HTMLElement>(ampmSelector);
   if (!hmEl) return;

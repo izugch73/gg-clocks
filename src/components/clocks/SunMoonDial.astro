@@ -1,0 +1,169 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Stars scattered over the night (lower) half: [x, y, radius, twinkle delay]
+const stars: [number, number, number, number][] = [
+  [40, 120, 1.4, 0], [62, 150, 1, 0.7], [95, 168, 1.6, 1.4], [128, 152, 1.1, 2.1],
+  [150, 125, 1.4, 0.4], [78, 132, 0.9, 1.8], [112, 138, 1.2, 1.1], [52, 136, 1.1, 2.6],
+];
+---
+
+<div
+  class="smd"
+  data-clock="sun-moon-dial"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 190 190" width="190" height="190" aria-hidden="true">
+    <defs>
+      <clipPath id="smd-dial"><circle cx="95" cy="95" r="90" /></clipPath>
+      <linearGradient id="smd-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" class="sky-top" />
+        <stop offset="100%" class="sky-bottom" />
+      </linearGradient>
+    </defs>
+    <g clip-path="url(#smd-dial)">
+      <rect x="0" y="0" width="190" height="190" class="night" />
+      <rect x="0" y="0" width="190" height="95" fill="url(#smd-sky)" />
+      {stars.map(([x, y, r, d]) => (
+        <circle cx={x} cy={y} r={r} class="star" style={`animation-delay:${d}s`} />
+      ))}
+      <line x1="0" y1="95" x2="190" y2="95" class="horizon" />
+    </g>
+    <circle cx="95" cy="95" r="90" class="edge" />
+
+    {Array.from({ length: 12 }).map((_, i) => (
+      <line x1="95" y1="8" x2="95" y2="14" class="idx" transform={`rotate(${i * 30} 95 95)`} />
+    ))}
+
+    {/* Sun at the bottom at 00:00 → rotated to the top by noon; moon opposite */}
+    <g class="hand-day">
+      <circle cx="95" cy="155" r="10" class="sun" />
+      <circle cx="95" cy="155" r="14" class="sun-glow" />
+      <path d="M95 25 A10 10 0 1 0 95 45 A12 12 0 0 1 95 25 Z" class="moon" />
+    </g>
+
+    <g class="hand-h">
+      <line x1="95" y1="104" x2="95" y2="60" class="hand hand-hour" />
+    </g>
+    <g class="hand-m">
+      <line x1="95" y1="108" x2="95" y2="36" class="hand hand-min" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1="95" y1="112" x2="95" y2="30" class="hand-sec" />
+    </g>
+    <circle cx="95" cy="95" r="4" class="pin" />
+  </svg>
+</div>
+
+<style>
+  .smd {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .smd svg {
+    display: block;
+  }
+  .night {
+    fill: var(--bg);
+  }
+  .sky-top {
+    stop-color: var(--accent);
+  }
+  .sky-bottom {
+    /* "light blue" day sky, tinted toward fg so it stays legible on any palette */
+    stop-color: color-mix(in srgb, var(--fg) 55%, #6fb6ff);
+  }
+  .horizon {
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    opacity: 0.9;
+  }
+  .edge {
+    fill: none;
+    stroke: color-mix(in srgb, var(--fg) 35%, transparent);
+    stroke-width: 2;
+  }
+  .star {
+    fill: var(--fg);
+    animation: smd-twinkle 3s ease-in-out infinite;
+  }
+  .idx {
+    stroke: var(--fg);
+    stroke-width: 2;
+    opacity: 0.7;
+  }
+  .sun {
+    fill: var(--accent);
+  }
+  .sun-glow {
+    fill: var(--accent);
+    opacity: 0.3;
+  }
+  .moon {
+    fill: var(--fg);
+    opacity: 0.95;
+  }
+  .hand {
+    stroke: var(--fg);
+    stroke-linecap: round;
+  }
+  .hand-hour {
+    stroke-width: 5;
+  }
+  .hand-min {
+    stroke-width: 3.5;
+  }
+  .hand-sec {
+    stroke: var(--accent);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+  .pin {
+    fill: var(--fg);
+  }
+  .hand-day {
+    transform-origin: 95px 95px;
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 95px 95px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  @keyframes smd-twinkle {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  import { mountAnalog, createTimeReader, startTicker } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".smd")) {
+    mountAnalog(el);
+    // Sun/moon ring: one turn per 24h, updated once a minute (no transition, so
+    // the 360 -> 0 reset at midnight is invisible).
+    const day = el.querySelector<SVGElement>(".hand-day");
+    if (day) {
+      const read = createTimeReader(el.dataset.tz);
+      startTicker(() => {
+        const { hour, minute } = read();
+        day.style.transform = `rotate(${((hour * 60 + minute) / 1440) * 360}deg)`;
+      }, 60_000);
+    }
+  }
+</script>

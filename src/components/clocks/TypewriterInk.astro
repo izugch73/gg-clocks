@@ -1,0 +1,167 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// SSR placeholder characters; the script rebuilds them from the real time.
+const placeholder = ["-", "-", ":", "-", "-"];
+---
+
+<div
+  class="tw"
+  data-clock="typewriter-ink"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="paper">
+    <!-- .hm/.sec stay in the DOM for the runtime; the typed characters mirror them -->
+    <div class="src" aria-hidden="true">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+    <div class="line1">
+      <span class="chars">{placeholder.map((c) => <span class="c">{c}</span>)}</span>
+      <span class="cursor" aria-hidden="true">_</span>
+    </div>
+    <div class="line2">
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+      <span class="live" hidden={!opts.live}>[LIVE]</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tw {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--fg);
+  }
+  .src {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* paper with faint uneven tone */
+  .paper {
+    position: relative;
+    width: 280px;
+    padding: 18px 22px 16px;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--fg) 5%, transparent), transparent 60%),
+      radial-gradient(ellipse at 80% 85%, color-mix(in srgb, var(--fg) 6%, transparent), transparent 55%);
+    border-radius: 2px;
+    box-shadow:
+      0 1px 0 color-mix(in srgb, var(--fg) 15%, transparent),
+      0 8px 18px rgba(0, 0, 0, 0.18);
+  }
+  .line1 {
+    display: flex;
+    align-items: baseline;
+    line-height: 1;
+  }
+  .chars {
+    display: inline-flex;
+    align-items: baseline;
+  }
+  /* pressed-ink look: dark offset shadow plus a faint blur, per-character jitter */
+  .c {
+    display: inline-block;
+    font-size: 36px;
+    font-weight: 700;
+    text-shadow:
+      0.7px 0.8px 0 color-mix(in srgb, var(--fg) 70%, #000),
+      -0.3px 0 0.8px color-mix(in srgb, var(--fg) 45%, transparent);
+  }
+  .c:nth-child(4n + 1) { transform: translateY(0.6px) rotate(-1.2deg); }
+  .c:nth-child(4n + 2) { transform: translateY(-0.8px) rotate(0.8deg); }
+  .c:nth-child(4n + 3) { transform: translateY(0.3px) rotate(1.3deg); }
+  .c:nth-child(4n) { transform: translateY(-0.4px) rotate(-0.6deg); }
+  .c:nth-child(3n) { opacity: 0.88; }
+  .c.s {
+    font-size: 24px;
+  }
+  .c.a {
+    font-size: 18px;
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .sp {
+    width: 0.4em;
+  }
+  .cursor {
+    margin-left: 4px;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    animation: tw-blink 1s steps(2, end) infinite;
+  }
+  .line2 {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    font-size: 15px;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .line2 > * {
+    margin-top: 10px;
+    text-shadow: 0.5px 0.5px 0 color-mix(in srgb, var(--fg) 60%, #000);
+  }
+  .date {
+    opacity: 0.85;
+  }
+  .live {
+    color: var(--accent);
+    font-weight: 700;
+    text-shadow: 0.5px 0.5px 0 color-mix(in srgb, var(--accent) 70%, #000);
+  }
+  @keyframes tw-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital, formatHour, pad2 } from "../../lib/clock-runtime";
+
+  for (const el of document.querySelectorAll<HTMLElement>(".tw")) {
+    const chars = el.querySelector<HTMLElement>(".chars")!;
+    mountDigital(el, {
+      onTick: (p, { format }) => {
+        const { hour, suffix } = formatHour(p.hour, format);
+        const sec = el.dataset.seconds === "1" ? ":" + pad2(p.second) : "";
+        const text = `${hour}:${pad2(p.minute)}${sec}${suffix}`;
+        // Mark seconds smaller and the AM/PM suffix lighter; rebuild only when the shape changes.
+        const secStart = sec ? hour.length + 3 : -1;
+        const list = [...text].map((c, i) => ({
+          c,
+          cls: c === " " ? "sp" : /[A-Z]/.test(c) ? "c a" : secStart >= 0 && i >= secStart && i < secStart + 3 ? "c s" : "c",
+        }));
+        if (chars.childElementCount !== list.length) {
+          chars.replaceChildren(
+            ...list.map(({ c, cls }) => {
+              const s = document.createElement("span");
+              s.className = cls;
+              s.textContent = c === " " ? "" : c;
+              return s;
+            }),
+          );
+          return;
+        }
+        list.forEach(({ c }, i) => {
+          const s = chars.children[i];
+          if (c !== " " && s.textContent !== c) s.textContent = c;
+        });
+      },
+    });
+  }
+</script>

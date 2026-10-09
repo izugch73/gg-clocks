@@ -1,0 +1,135 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const C = 100;
+const letters = [
+  { t: "N", x: 100, y: 17, cls: "letter north" },
+  { t: "E", x: 183, y: 100, cls: "letter" },
+  { t: "S", x: 100, y: 183, cls: "letter" },
+  { t: "W", x: 17, y: 100, cls: "letter" },
+];
+---
+
+<div
+  class="cr"
+  data-clock="compass-rose"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+    <defs>
+      <radialGradient id="cr-cap" cx="40%" cy="35%" r="70%">
+        <stop offset="0%" stop-color="var(--accent)" />
+        <stop offset="100%" stop-color="var(--fg)" />
+      </radialGradient>
+    </defs>
+    <circle cx={C} cy={C} r="97" class="dial" />
+    <circle cx={C} cy={C} r="92" class="ring" />
+
+    {/* 8-point star: short diagonal points behind, long cardinal points on top */}
+    {[45, 135, 225, 315].map((a) => (
+      <polygon points="100,54 94,94 100,100 106,94" class="short" transform={`rotate(${a} 100 100)`} />
+    ))}
+    {[0, 90, 180, 270].map((a) => (
+      <g transform={`rotate(${a} 100 100)`}>
+        <polygon points="100,30 92,92 100,100" class="long-a" />
+        <polygon points="100,30 108,92 100,100" class="long-b" />
+      </g>
+    ))}
+
+    {letters.map((l) => (
+      <text x={l.x} y={l.y} class={l.cls} text-anchor="middle" dominant-baseline="central">{l.t}</text>
+    ))}
+
+    <g class="hand-h">
+      <polygon points="100,48 106,100 94,100" class="needle-tip" />
+      <polygon points="94,100 106,100 100,118" class="needle-tail" />
+    </g>
+    <g class="hand-m">
+      <polygon points="100,26 102.6,100 97.4,100" class="needle-tail" />
+      <polygon points="97.4,100 102.6,100 100,114" class="needle-tail" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1={C} y1="112" x2={C} y2="24" class="hair" />
+    </g>
+    <circle cx={C} cy={C} r="5" fill="url(#cr-cap)" />
+    <circle cx={C} cy={C} r="5" class="cap-ring" />
+  </svg>
+</div>
+
+<style>
+  .cr {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .cr svg {
+    display: block;
+  }
+  .dial {
+    fill: var(--bg);
+    stroke: var(--fg);
+    stroke-width: 2;
+  }
+  .ring {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 0.8;
+    opacity: 0.8;
+  }
+  .short {
+    fill: var(--fg);
+    opacity: 0.4;
+  }
+  .long-a {
+    fill: var(--fg);
+  }
+  .long-b {
+    fill: var(--accent);
+  }
+  .letter {
+    font-family: "Cinzel", "Times New Roman", serif;
+    font-weight: 700;
+    font-size: 13px;
+    fill: var(--fg);
+  }
+  .north {
+    fill: var(--accent);
+  }
+  .needle-tip {
+    fill: var(--accent);
+  }
+  .needle-tail {
+    fill: var(--fg);
+  }
+  .hair {
+    stroke: var(--accent);
+    stroke-width: 0.8;
+    stroke-linecap: round;
+  }
+  .cap-ring {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 0.8;
+    opacity: 0.6;
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 100px 100px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+</style>
+
+<script>
+  import { mountAnalog } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".cr")) mountAnalog(el);
+</script>

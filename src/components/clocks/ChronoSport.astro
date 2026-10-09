@@ -1,0 +1,154 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Sub-dials: 9 o'clock holds the live seconds hand; 6 and 3 are decorative.
+const subs = [
+  { cx: 55, cy: 100, hand: 220 },
+  { cx: 100, cy: 145, hand: 40 },
+  { cx: 145, cy: 100, hand: 135 },
+];
+---
+
+<div
+  class="cs"
+  data-clock="chrono-sport"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+    <circle cx="100" cy="100" r="99" class="bezel" />
+    <circle cx="100" cy="100" r="88" class="dial" />
+    {/* Tachymeter ticks: 60 dashes around the bezel (pathLength 120 → "1 1" = 60 ticks) */}
+    <circle cx="100" cy="100" r="93" class="tachy" pathLength="120" />
+    <circle cx="100" cy="100" r="88" class="dial-edge" />
+
+    {Array.from({ length: 12 }).map((_, i) =>
+      i === 0 ? null : (
+        <line x1="100" y1="14" x2="100" y2="24" class="idx" transform={`rotate(${i * 30} 100 100)`} />
+      ),
+    )}
+    <text x="100" y="24" class="twelve" text-anchor="middle" dominant-baseline="central">12</text>
+
+    {subs.map((s, i) => (
+      <g>
+        <circle cx={s.cx} cy={s.cy} r="20" class="sub" />
+        <circle cx={s.cx} cy={s.cy} r="17" class="sub-ticks" pathLength="24" />
+        {i !== 0 && (
+          <line x1={s.cx} y1={s.cy + 4} x2={s.cx} y2={s.cy - 14} class="sub-hand" transform={`rotate(${s.hand} ${s.cx} ${s.cy})`} />
+        )}
+        <circle cx={s.cx} cy={s.cy} r="1.8" class="sub-pin" />
+      </g>
+    ))}
+
+    <g class="hand-h">
+      <path d="M100 110 L93 100 L97 50 L100 42 L103 50 L107 100 Z" class="sword" />
+      <path d="M100 96 L98 92 L100 54 L102 92 Z" class="lume" />
+    </g>
+    <g class="hand-m">
+      <path d="M100 112 L95 102 L98 32 L100 22 L102 32 L105 102 Z" class="sword" />
+      <path d="M100 98 L98.5 94 L100 36 L101.5 94 Z" class="lume" />
+    </g>
+    {/* Running seconds live in the 9 o'clock sub-dial */}
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1="55" y1="105" x2="55" y2="84" class="sec-hand" />
+    </g>
+    <circle cx="100" cy="100" r="5" class="pin" />
+    <circle cx="100" cy="100" r="2" class="pin-center" />
+  </svg>
+</div>
+
+<style>
+  .cs {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+  }
+  .cs svg {
+    display: block;
+  }
+  .bezel {
+    fill: color-mix(in srgb, var(--fg) 12%, var(--bg));
+  }
+  .tachy {
+    fill: none;
+    stroke: color-mix(in srgb, var(--fg) 40%, transparent);
+    stroke-width: 6;
+    stroke-dasharray: 0.35 1.65;
+  }
+  .dial {
+    fill: var(--bg);
+  }
+  .dial-edge {
+    fill: none;
+    stroke: color-mix(in srgb, var(--fg) 40%, transparent);
+    stroke-width: 1;
+  }
+  .idx {
+    stroke: var(--fg);
+    stroke-width: 3;
+    stroke-linecap: butt;
+  }
+  .twelve {
+    font-family: "Orbitron", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    fill: var(--fg);
+  }
+  .sub {
+    fill: color-mix(in srgb, var(--fg) 8%, transparent);
+    stroke: color-mix(in srgb, var(--fg) 40%, transparent);
+    stroke-width: 1;
+  }
+  .sub-ticks {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 3;
+    stroke-dasharray: 0.12 1.88;
+    opacity: 0.8;
+  }
+  .sub-hand {
+    stroke: var(--fg);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    opacity: 0.7;
+  }
+  .sub-pin {
+    fill: var(--fg);
+  }
+  .sword {
+    fill: var(--fg);
+  }
+  .lume {
+    fill: var(--accent);
+  }
+  .sec-hand {
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+  .pin {
+    fill: var(--fg);
+  }
+  .pin-center {
+    fill: var(--accent);
+  }
+  .hand-h,
+  .hand-m {
+    transform-origin: 100px 100px;
+    transition: transform 0.2s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  .hand-s {
+    transform-origin: 55px 100px;
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+</style>
+
+<script>
+  import { mountAnalog } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".cs")) mountAnalog(el);
+</script>

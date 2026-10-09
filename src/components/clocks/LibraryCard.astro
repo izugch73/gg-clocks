@@ -1,0 +1,170 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Faded previous "stamps" above the live row.
+const past = [
+  ["04/12", "10:05"],
+  ["06/30", "15:40"],
+  ["08/21", "09:15"],
+];
+---
+
+<div
+  class="lc"
+  data-clock="library-card"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="pocket" aria-hidden="true"></div>
+  <div class="card">
+    <div class="row head">
+      <span class="ttl">貸出カード</span>
+      <span class="due">DUE</span>
+      <span class="live" hidden={!opts.live}>LIVE</span>
+    </div>
+    {past.map(([d, t]) => (
+      <div class="row ghost" aria-hidden="true">
+        <span>{d}</span>
+        <span>{t}</span>
+      </div>
+    ))}
+    <div class="row now">
+      <span class="stamp">
+        <span class="date" hidden={!opts.date}>--/-- ---</span>
+        <span class="t"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>:--</span></span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .lc {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Zen Old Mincho", serif;
+    position: relative;
+    width: 240px;
+    padding-top: 10px;
+    color: var(--fg);
+  }
+  /* darker card-pocket edge peeking out behind the card */
+  .pocket {
+    position: absolute;
+    top: 0;
+    left: 8px;
+    right: 8px;
+    height: 24px;
+    border-radius: 3px 3px 0 0;
+    background: color-mix(in srgb, var(--fg) 30%, var(--bg));
+  }
+  .card {
+    position: relative;
+    height: 150px;
+    padding: 4px 0 0;
+    background-color: var(--bg);
+    /* ruled grid: row lines, one column divider, a margin rule tinted from accent */
+    background-image:
+      linear-gradient(90deg, transparent 10px, color-mix(in srgb, var(--accent) 40%, transparent) 10px 11px, transparent 11px),
+      linear-gradient(90deg, transparent 88px, color-mix(in srgb, var(--fg) 15%, transparent) 88px 89px, transparent 89px),
+      repeating-linear-gradient(180deg, transparent 0 27px, color-mix(in srgb, var(--fg) 15%, transparent) 27px 28px);
+    background-position: 0 0, 0 0, 0 2px;
+    border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    align-items: center;
+    height: 28px;
+    padding-left: 18px;
+    font-size: 13px;
+  }
+  .head {
+    letter-spacing: 2px;
+  }
+  .ttl {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .due {
+    font-size: 10px;
+    opacity: 0.7;
+    padding-left: 6px;
+  }
+  .head .live {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 1px 4px 0 6px;
+    transform: rotate(4deg);
+  }
+  .ghost {
+    color: var(--accent);
+    opacity: 0.3;
+    font-weight: 700;
+  }
+  .ghost span {
+    display: inline-block;
+    transform: rotate(-1.5deg);
+  }
+  .ghost:nth-of-type(3) span {
+    transform: rotate(1deg) translateX(3px);
+  }
+  .now {
+    display: flex;
+    height: 34px;
+    padding-left: 22px;
+  }
+  /* purple ink stamp: rotated box, uneven ink via a layered mask */
+  .stamp {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 2px 8px 0;
+    border: 2px solid var(--accent);
+    border-radius: 2px;
+    color: var(--accent);
+    font-weight: 700;
+    line-height: 1.1;
+    transform: rotate(-3deg) translateY(-2px);
+    -webkit-mask-image:
+      radial-gradient(ellipse at 60% 50%, #000 50%, rgba(0, 0, 0, 0.5) 100%),
+      repeating-radial-gradient(circle at 30% 40%, #000 0 2px, rgba(0, 0, 0, 0.7) 2px 4px);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      radial-gradient(ellipse at 60% 50%, #000 50%, rgba(0, 0, 0, 0.5) 100%),
+      repeating-radial-gradient(circle at 30% 40%, #000 0 2px, rgba(0, 0, 0, 0.7) 2px 4px);
+    mask-composite: intersect;
+  }
+  .stamp .date {
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+  .t {
+    font-variant-numeric: tabular-nums;
+  }
+  .hm {
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
+  .sec {
+    font-size: 13px;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".lc")) mountDigital(el, { renderSeconds: (s) => ":" + s });
+</script>

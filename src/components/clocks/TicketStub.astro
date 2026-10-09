@@ -1,0 +1,132 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="tks"
+  data-clock="ticket-stub"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="shadow">
+    <div class="ticket">
+      <div class="main">
+        <div class="top">
+          <span class="no">No. 0001</span>
+          <span class="live" hidden={!opts.live}>LIVE</span>
+        </div>
+        <div class="time">
+          <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+        </div>
+      </div>
+      <div class="stub">
+        <span class="admit">ADMIT ONE</span>
+        <span class="date" hidden={!opts.date}>--/-- ---</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tks {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Bebas Neue", "Impact", sans-serif;
+    color: var(--fg);
+  }
+  /* drop-shadow on a wrapper so it follows the notched (masked) outline */
+  .shadow {
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.25));
+  }
+  .ticket {
+    display: flex;
+    width: 280px;
+    height: 100px;
+    background: var(--bg);
+    border-radius: 10px;
+    overflow: hidden;
+    /* Semicircular notches at 72% on the top and bottom edges. Each gradient
+       covers one half of the card so no mask compositing is needed. */
+    -webkit-mask:
+      radial-gradient(circle 9px at 72% 0, transparent 8px, #000 9px) top / 100% 51% no-repeat,
+      radial-gradient(circle 9px at 72% 100%, transparent 8px, #000 9px) bottom / 100% 51% no-repeat;
+    mask:
+      radial-gradient(circle 9px at 72% 0, transparent 8px, #000 9px) top / 100% 51% no-repeat,
+      radial-gradient(circle 9px at 72% 100%, transparent 8px, #000 9px) bottom / 100% 51% no-repeat;
+  }
+  .main {
+    flex: 0 0 72%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6px 14px 6px 18px;
+    box-sizing: border-box;
+  }
+  .top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: color-mix(in srgb, var(--fg) 55%, transparent);
+    line-height: 1;
+  }
+  .live {
+    padding: 2px 6px 1px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+  .time {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+    margin-top: 4px;
+  }
+  .hm {
+    font-size: 56px;
+    letter-spacing: 1px;
+  }
+  .sec {
+    font-size: 26px;
+    color: var(--accent);
+  }
+  .stub {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--accent);
+    color: var(--bg);
+    border-left: 2px dashed color-mix(in srgb, var(--fg) 30%, transparent);
+    writing-mode: vertical-rl;
+    line-height: 1;
+  }
+  .admit {
+    font-size: 11px;
+    letter-spacing: 3px;
+    opacity: 0.85;
+  }
+  .date {
+    font-size: 17px;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".tks")) mountDigital(el);
+</script>

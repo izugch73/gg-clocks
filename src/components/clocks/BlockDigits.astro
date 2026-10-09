@@ -1,0 +1,168 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="bd"
+  data-clock="block-digits"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <span class="live" hidden={!opts.live}>LIVE</span>
+    <span class="hm">--:--</span>
+    <div class="row">
+      <span class="chars" aria-hidden="true"><span>-</span><span>-</span><span>:</span><span>-</span><span>-</span></span>
+      <span class="ampm"></span>
+    </div>
+    <div class="sub">
+      <span class="sec" hidden={!opts.seconds}>--</span>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .bd {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Press Start 2P", monospace;
+    color: var(--fg);
+    --dark: color-mix(in srgb, var(--accent) 55%, black);
+    --cell: 12px;
+  }
+  .panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 300px;
+    box-sizing: border-box;
+    padding: 16px 14px 14px;
+    background:
+      linear-gradient(color-mix(in srgb, var(--fg) 9%, transparent) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+      linear-gradient(90deg, color-mix(in srgb, var(--fg) 9%, transparent) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+      var(--bg);
+    border: 2px solid color-mix(in srgb, var(--fg) 70%, transparent);
+    box-shadow: inset 0 0 0 2px var(--bg);
+  }
+  [hidden] {
+    display: none !important;
+  }
+  /* .hm is the runtime's text; .chars mirrors it so each digit can drop in */
+  .hm {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    font-size: 1px;
+  }
+  .live {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 7px;
+    color: var(--accent);
+    text-shadow: 1px 1px 0 var(--dark);
+    animation: bd-blink 2s steps(1, end) infinite;
+  }
+  @keyframes bd-blink {
+    50% {
+      opacity: 0.45;
+    }
+  }
+  .row {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    line-height: 1;
+  }
+  .chars {
+    display: flex;
+    gap: 3px;
+    height: 44px;
+    overflow: hidden;
+    align-items: flex-end;
+  }
+  .chars span {
+    display: block;
+    font-size: 34px;
+    line-height: 1;
+    color: var(--accent);
+    /* 3D block face: darker bottom-right edges */
+    text-shadow:
+      1px 1px 0 var(--dark), 2px 2px 0 var(--dark), 3px 3px 0 var(--dark),
+      4px 4px 0 color-mix(in srgb, var(--dark) 70%, black);
+    padding-right: 4px;
+  }
+  .chars span.drop {
+    animation: bd-drop 0.36s steps(4, end);
+  }
+  @keyframes bd-drop {
+    from {
+      transform: translateY(-48px);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  .ampm {
+    font-size: 9px;
+    margin-bottom: 4px;
+    opacity: 0.85;
+  }
+  .ampm:empty {
+    display: none;
+  }
+  .sub {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .sub:empty,
+  .sub:not(:has(> :not([hidden]))) {
+    display: none;
+  }
+  .sec {
+    font-size: 14px;
+    color: var(--accent);
+    text-shadow: 2px 2px 0 var(--dark);
+    letter-spacing: 2px;
+  }
+  .date {
+    font-size: 9px;
+    opacity: 0.8;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+
+  for (const el of document.querySelectorAll<HTMLElement>(".bd")) {
+    const hm = el.querySelector<HTMLElement>(".hm");
+    const chars = el.querySelector<HTMLElement>(".chars");
+    mountDigital(el, {
+      onTick: () => {
+        if (!hm || !chars) return;
+        const text = hm.textContent ?? "";
+        while (chars.children.length < text.length) chars.appendChild(document.createElement("span"));
+        while (chars.children.length > text.length) chars.lastElementChild?.remove();
+        [...text].forEach((c, i) => {
+          const s = chars.children[i] as HTMLElement;
+          if (s.textContent === c) return;
+          s.textContent = c;
+          s.classList.remove("drop");
+          void s.offsetWidth; // restart the drop animation
+          s.classList.add("drop");
+        });
+      },
+    });
+  }
+</script>

@@ -1,0 +1,151 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// Five droplets of varied length hang from the baseline; each one stretches on its own delay.
+const drops = [
+  { x: 18, h: 26, d: 0 },
+  { x: 36, h: 14, d: 1.3 },
+  { x: 54, h: 32, d: 2.6 },
+  { x: 70, h: 18, d: 0.7 },
+  { x: 86, h: 24, d: 2 },
+];
+---
+
+<div
+  class="bd"
+  data-clock="blood-drip"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <div class="live" hidden={!opts.live}>● LIVE</div>
+    <div class="stack">
+      <div class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+      <svg class="drips" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+        {drops.map((dp) => (
+          <path
+            class="drop"
+            style={`transform-origin:${dp.x}px 0;animation-delay:${dp.d}s`}
+            d={`M${dp.x - 2.4} 0 C ${dp.x - 2.4} ${dp.h * 0.55}, ${dp.x - 3.2} ${dp.h - 4}, ${dp.x} ${dp.h} C ${dp.x + 3.2} ${dp.h - 4}, ${dp.x + 2.4} ${dp.h * 0.55}, ${dp.x + 2.4} 0 Z`}
+          />
+        ))}
+      </svg>
+    </div>
+    <div class="date" hidden={!opts.date}>--/-- ---</div>
+  </div>
+</div>
+
+<style>
+  .bd {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Cinzel", serif;
+  }
+  .panel {
+    position: relative;
+    width: 280px;
+    height: 150px;
+    box-sizing: border-box;
+    padding: 14px 16px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 45%, transparent 40%, color-mix(in srgb, var(--accent) 35%, transparent) 100%),
+      var(--bg);
+    overflow: hidden;
+    text-align: center;
+  }
+  .live {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 2px;
+    text-shadow: 0 0 8px var(--accent);
+  }
+  .stack {
+    position: relative;
+  }
+  /* glossy red lettering: dark outline underneath, pale highlight on top edge */
+  .time {
+    position: relative;
+    z-index: 1;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.35),
+      1px 1px 0 rgba(0, 0, 0, 0.85),
+      -1px 1px 0 rgba(0, 0, 0, 0.85),
+      1px -1px 0 rgba(0, 0, 0, 0.6),
+      -1px -1px 0 rgba(0, 0, 0, 0.6),
+      0 3px 6px rgba(0, 0, 0, 0.7),
+      0 0 18px color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+  .sec {
+    font-size: 22px;
+    margin-left: 6px;
+  }
+  .drips {
+    display: block;
+    width: 100%;
+    height: 40px;
+    margin-top: -4px;
+    overflow: visible;
+  }
+  .drop {
+    fill: var(--accent);
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+    transform: scaleY(0.15);
+    animation: bd-drip 4s ease-in infinite;
+  }
+  .date {
+    margin-top: 2px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--fg);
+    animation: bd-flicker 5s steps(1, end) infinite;
+  }
+  @keyframes bd-drip {
+    0% {
+      transform: scaleY(0.15);
+    }
+    80% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+    95% {
+      transform: scaleY(1.05);
+      opacity: 0;
+    }
+    100% {
+      transform: scaleY(0.15);
+      opacity: 0;
+    }
+  }
+  /* uneven, candle-like flicker; never fully dark */
+  @keyframes bd-flicker {
+    0%, 7%, 31%, 48%, 77%, 100% { opacity: 1; }
+    8%, 30% { opacity: 0.7; }
+    49% { opacity: 0.55; }
+    50%, 60% { opacity: 0.85; }
+    78%, 82% { opacity: 0.6; }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".bd")) mountDigital(el);
+</script>

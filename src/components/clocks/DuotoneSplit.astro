@@ -1,0 +1,142 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="dts"
+  data-clock="duotone-split"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="box">
+    <!-- .hm keeps the canonical HH:MM for the runtime; the coloured halves are split from it -->
+    <span class="hm sr">--:--</span>
+    <div class="row" aria-hidden="true">
+      <span class="hh">--</span><span class="colon">:</span><span class="mm">--</span>
+      <span class="tail">
+        <span class="ampm"></span>
+        <span class="sec" hidden={!opts.seconds}>--</span>
+      </span>
+    </div>
+    <div class="meta">
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+      <span class="live" hidden={!opts.live}>LIVE</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .dts {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Rubik Mono One", system-ui, sans-serif;
+    color: var(--fg);
+    text-shadow: 0 0 6px var(--bg);
+  }
+  .box {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .row {
+    display: flex;
+    align-items: baseline;
+    font-size: 44px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .mm {
+    color: var(--accent);
+  }
+  .colon {
+    animation: dts-blink 1s linear infinite;
+  }
+  .tail {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-left: 8px;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+  .ampm:empty {
+    display: none;
+  }
+  /* nothing to show beside the digits (24h, seconds off) */
+  .tail:not(:has(.sec:not([hidden]))):has(.ampm:empty) {
+    display: none;
+  }
+  .sec {
+    opacity: 0.6;
+  }
+  .meta {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .meta:not(:has(:not([hidden]))) {
+    display: none;
+  }
+  .date {
+    position: relative;
+    padding-bottom: 7px;
+    opacity: 0.85;
+  }
+  .date::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .live {
+    color: var(--accent);
+  }
+  @keyframes dts-blink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital, formatHour, pad2 } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".dts")) {
+    const hh = el.querySelector<HTMLElement>(".hh");
+    const mm = el.querySelector<HTMLElement>(".mm");
+    mountDigital(el, {
+      onTick: (p, { format }) => {
+        if (hh) hh.textContent = formatHour(p.hour, format).hour;
+        if (mm) mm.textContent = pad2(p.minute);
+      },
+    });
+  }
+</script>

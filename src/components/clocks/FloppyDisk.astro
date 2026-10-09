@@ -1,0 +1,140 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="fd"
+  data-clock="floppy-disk"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="disk">
+    <div class="shutter" aria-hidden="true"><span class="hole"></span></div>
+    <span class="wp" aria-hidden="true"></span>
+    <div class="label">
+      <div class="stripe"></div>
+      <div class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></div>
+      <div class="meta">
+        <span class="disk-no">DISK 1 of 1</span>
+        <span class="date" hidden={!opts.date}>--/-- ---</span>
+        <span class="live" hidden={!opts.live}>● REC</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fd {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Permanent Marker", cursive;
+    color: var(--fg);
+  }
+  .disk {
+    position: relative;
+    width: 184px;
+    height: 184px;
+    background: var(--bg);
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--bg) 70%, white);
+    overflow: hidden;
+  }
+  /* metal shutter on top; slides sideways every 4 s like a drive engaging */
+  .shutter {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 72px;
+    height: 46px;
+    margin-left: -30px;
+    background: linear-gradient(90deg, #8f949b, #e6e8ea 40%, #b8bcc2 70%, #9ca1a8);
+    border-radius: 0 0 3px 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    animation: fd-slide 4s ease-in-out infinite;
+  }
+  .hole {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    width: 14px;
+    height: 32px;
+    background: color-mix(in srgb, var(--bg) 40%, black);
+    border-radius: 2px;
+  }
+  @keyframes fd-slide {
+    0%,
+    55%,
+    100% {
+      transform: translateX(0);
+    }
+    65%,
+    90% {
+      transform: translateX(6px);
+    }
+  }
+  .wp {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 8px;
+    height: 8px;
+    background: color-mix(in srgb, var(--bg) 40%, black);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bg) 60%, white);
+  }
+  .label {
+    position: absolute;
+    left: 12px;
+    right: 24px;
+    bottom: 20px;
+    height: 96px;
+    background:
+      repeating-linear-gradient(180deg, transparent 0 17px, color-mix(in srgb, var(--fg) 18%, transparent) 17px 18px) 0 36px / 100% 100% no-repeat,
+      #fdfcf7;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+  }
+  .stripe {
+    height: 10px;
+    background: var(--accent);
+  }
+  .time {
+    margin: 8px 8px 0;
+    font-size: 30px;
+    line-height: 1.1;
+    white-space: nowrap;
+    transform: rotate(-2deg);
+  }
+  .sec {
+    font-size: 16px;
+    margin-left: 4px;
+    opacity: 0.8;
+  }
+  .meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 6px 8px 0;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .disk-no {
+    opacity: 0.6;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+  .live {
+    color: var(--accent);
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".fd")) mountDigital(el);
+</script>

@@ -1,0 +1,109 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="slb"
+  data-clock="slash-band"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="band">
+    <div class="main">
+      <span class="live" hidden={!opts.live}>LIVE</span>
+      <span class="hm">--:--</span>
+    </div>
+    <div class="side">
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+      <span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+    <span class="stripe" aria-hidden="true"></span>
+  </div>
+</div>
+
+<style>
+  .slb {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Oswald", "Arial Narrow", sans-serif;
+    padding: 0 20px 8px;
+  }
+  .band {
+    position: relative;
+    display: flex;
+    height: 54px;
+    transform: skewX(-12deg);
+  }
+  .main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 22px 0 20px;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .main > *,
+  .side > * {
+    transform: skewX(12deg); /* keep text upright inside the skewed band */
+  }
+  .hm {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .live {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 2px 6px;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+  }
+  .side {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 0 18px 0 14px;
+    background: var(--accent);
+    color: var(--fg);
+    font-weight: 700;
+    line-height: 1;
+    font-variant: small-caps;
+    letter-spacing: 1px;
+  }
+  /* The accent block vanishes when it has nothing visible to show. */
+  .side:not(:has(.date:not([hidden]), .sec:not([hidden]))) {
+    display: none;
+  }
+  .date {
+    font-size: 14px;
+  }
+  .sec {
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stripe {
+    position: absolute;
+    left: -16px;
+    right: 0;
+    bottom: -6px;
+    height: 3px;
+    background: var(--accent);
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".slb")) mountDigital(el);
+</script>

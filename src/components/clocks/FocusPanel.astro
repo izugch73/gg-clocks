@@ -1,0 +1,173 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="fp"
+  data-clock="focus-panel"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <div class="head">
+      <span class="pill"><span class="dot" aria-hidden="true"></span>FOCUS</span>
+      <span class="live" hidden={!opts.live}>LIVE</span>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+    </div>
+    <div class="time">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+    <div class="progress" aria-hidden="true">
+      <span class="seg on"></span>
+      <span class="seg on"></span>
+      <span class="seg on"></span>
+      <span class="seg"><span class="fill"></span></span>
+      <svg class="tomatoes" viewBox="0 0 64 14" width="64" height="14">
+        {[0, 1, 2, 3].map((i) => (
+          <g transform={`translate(${i * 17} 0)`} class={i < 3 ? "tomato on" : "tomato"}>
+            <circle cx="7" cy="8" r="5.5" class="body" />
+            <path d="M7 3 L5 0.5 M7 3 L9 0.5 M7 3 L7 0" class="stem" />
+          </g>
+        ))}
+      </svg>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fp {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+  .panel {
+    width: 260px;
+    padding: 12px 16px 14px;
+    border-radius: 16px;
+    background: var(--bg);
+    color: var(--fg);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      0 10px 24px rgba(0, 0, 0, 0.1);
+  }
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+    letter-spacing: 2px;
+    font-weight: 800;
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: fp-pulse 2s ease-in-out infinite;
+  }
+  .live {
+    color: var(--accent);
+    letter-spacing: 2px;
+    font-weight: 800;
+  }
+  .date {
+    margin-left: auto;
+    color: color-mix(in srgb, var(--fg) 60%, transparent);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .time {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 6px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .hm {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .sec {
+    font-size: 18px;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--fg) 55%, transparent);
+  }
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 12px;
+  }
+  .seg {
+    position: relative;
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fg) 12%, transparent);
+    overflow: hidden;
+  }
+  .seg.on {
+    background: var(--accent);
+  }
+  .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    background: var(--accent);
+    animation: fp-fill 1500s linear infinite; /* one 25-minute pomodoro */
+  }
+  .tomatoes {
+    flex: none;
+    margin-left: 6px;
+  }
+  .tomato .body {
+    fill: color-mix(in srgb, var(--fg) 15%, transparent);
+  }
+  .tomato.on .body {
+    fill: var(--accent);
+  }
+  .tomato .stem {
+    fill: none;
+    stroke: color-mix(in srgb, var(--fg) 45%, transparent);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+  .tomato.on .stem {
+    stroke: color-mix(in srgb, var(--fg) 70%, transparent);
+  }
+  @keyframes fp-pulse {
+    50% {
+      opacity: 0.35;
+      transform: scale(0.8);
+    }
+  }
+  @keyframes fp-fill {
+    to {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".fp")) mountDigital(el);
+</script>

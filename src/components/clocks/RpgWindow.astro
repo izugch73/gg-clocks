@@ -1,0 +1,117 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="rw"
+  data-clock="rpg-window"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="outer">
+    <div class="inner">
+      <div class="head">
+        <span class="label">じかん</span>
+        <span class="live" hidden={!opts.live}>LIVE</span>
+      </div>
+      <div class="time">
+        <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>:--</span>
+      </div>
+      <div class="date" hidden={!opts.date}>--/-- ---</div>
+      <span class="cursor" aria-hidden="true"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .rw {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "DotGothic16", "MS Gothic", monospace;
+    color: var(--fg);
+  }
+  /* Classic JRPG double frame: 3px line, 2px gap, 2px line. */
+  .outer {
+    width: 260px;
+    background: var(--bg);
+    border: 3px solid var(--fg);
+    border-radius: 6px;
+    padding: 2px;
+  }
+  .inner {
+    position: relative;
+    border: 2px solid var(--fg);
+    border-radius: 3px;
+    padding: 8px 14px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .label {
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .live {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 2px;
+    animation: rw-blink 1.2s steps(2, end) infinite;
+  }
+  .time {
+    font-size: 32px;
+    line-height: 1.1;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sec {
+    font-size: 20px;
+    opacity: 0.85;
+  }
+  .date {
+    font-size: 14px;
+    line-height: 1.2;
+    letter-spacing: 1px;
+  }
+  /* Message-advance cursor: a small downward triangle built from borders. */
+  .cursor {
+    position: absolute;
+    right: 8px;
+    bottom: 6px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--accent);
+    animation: rw-bounce 0.8s steps(2, end) infinite;
+  }
+  @keyframes rw-bounce {
+    50% {
+      transform: translateY(3px);
+    }
+  }
+  @keyframes rw-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".rw")) mountDigital(el, { renderSeconds: (s) => ":" + s });
+</script>

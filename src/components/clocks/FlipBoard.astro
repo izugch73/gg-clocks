@@ -1,0 +1,187 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const placeholder = ["-", "-", ":", "-", "-"];
+---
+
+<div
+  class="fb"
+  data-clock="flip-board"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="board">
+    <div class="strip">
+      <span class="label">DEPARTURE</span>
+      <span class="live" hidden={!opts.live}>● LIVE</span>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+    </div>
+    <!-- .hm/.sec stay in the DOM for the runtime; the tiles mirror their text -->
+    <div class="src" aria-hidden="true">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+    <div class="tiles">
+      {placeholder.map((c) => <span class:list={["tile", { colon: c === ":" }]}>{c}</span>)}
+    </div>
+  </div>
+</div>
+
+<style>
+  .fb {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Oswald", sans-serif;
+  }
+  .board {
+    width: 280px;
+    padding: 0 0 8px;
+    background: color-mix(in srgb, var(--bg) 70%, #000);
+    border-radius: 4px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+  .strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 10px;
+    margin-bottom: 8px;
+    background: var(--accent);
+    color: color-mix(in srgb, var(--bg) 90%, #000);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .strip .date {
+    margin-left: auto;
+    letter-spacing: 2px;
+  }
+  .live {
+    animation: fb-blink 1.4s steps(2, end) infinite;
+  }
+  .src {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .tiles {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    padding: 0 6px;
+  }
+  /* two-tone tile with the horizontal split seam */
+  .tiles :global(.tile) {
+    position: relative;
+    width: 30px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fg);
+    background: linear-gradient(color-mix(in srgb, var(--fg) 14%, var(--bg)) 0 50%, var(--bg) 50%);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+  }
+  .tiles :global(.tile)::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  /* flap hint: the top-half cover folds down when a tile's character changes */
+  .tiles :global(.tile)::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 50% 0;
+    background: color-mix(in srgb, var(--fg) 14%, var(--bg));
+    transform: scaleY(0);
+    transform-origin: bottom;
+    pointer-events: none;
+  }
+  .tiles :global(.tile.flip)::before {
+    animation: fb-flap 0.3s ease-in;
+  }
+  .tiles :global(.tile.colon) {
+    width: 14px;
+    font-size: 30px;
+  }
+  .tiles :global(.tile.alpha) {
+    width: 20px;
+    font-size: 20px;
+  }
+  .tiles :global(.sp) {
+    width: 4px;
+  }
+  @keyframes fb-flap {
+    from {
+      transform: scaleY(1);
+    }
+    to {
+      transform: scaleY(0);
+    }
+  }
+  @keyframes fb-blink {
+    50% {
+      opacity: 0.25;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital, formatHour, pad2 } from "../../lib/clock-runtime";
+
+  for (const el of document.querySelectorAll<HTMLElement>(".fb")) {
+    const tiles = el.querySelector<HTMLElement>(".tiles")!;
+    let first = true;
+    mountDigital(el, {
+      onTick: (p, { format }) => {
+        const { hour, suffix } = formatHour(p.hour, format);
+        const sec = el.dataset.seconds === "1" ? ":" + pad2(p.second) : "";
+        const chars = [...`${hour}:${pad2(p.minute)}${sec}${suffix}`];
+        if (tiles.childElementCount !== chars.length) {
+          tiles.replaceChildren(
+            ...chars.map((c) => {
+              const s = document.createElement("span");
+              s.className = c === " " ? "sp" : c === ":" ? "tile colon" : /[A-Z]/.test(c) ? "tile alpha" : "tile";
+              s.textContent = c === " " ? "" : c;
+              return s;
+            }),
+          );
+          first = false;
+          return;
+        }
+        chars.forEach((c, i) => {
+          const s = tiles.children[i] as HTMLElement;
+          if (c === " " || s.textContent === c) return;
+          s.textContent = c;
+          if (first) return;
+          s.classList.remove("flip");
+          void s.offsetWidth; // restart the flap animation
+          s.classList.add("flip");
+        });
+        first = false;
+      },
+    });
+  }
+</script>

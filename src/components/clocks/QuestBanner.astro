@@ -1,0 +1,161 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="qb"
+  data-clock="quest-banner"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="banner">
+    <span class="rule top" aria-hidden="true"></span>
+    <span class="rule bottom" aria-hidden="true"></span>
+    <span class="shine" aria-hidden="true"></span>
+    <svg class="gem" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2 L22 12 L12 22 L2 12 Z" fill="var(--accent)" />
+      <path d="M12 7 L17 12 L12 17 L7 12 Z" fill="var(--bg)" />
+    </svg>
+    <div class="text">
+      <div class="label">
+        <span>Quest Time</span>
+        <span class="live" hidden={!opts.live}>● Live</span>
+      </div>
+      <div class="time">
+        <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>:--</span>
+      </div>
+    </div>
+    <div class="date" hidden={!opts.date}>--/-- ---</div>
+  </div>
+</div>
+
+<style>
+  .qb {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Cinzel", "Georgia", serif;
+    color: var(--fg);
+  }
+  /* Ribbon: swallow-tail notches at both ends, bg fading toward the tips. */
+  .banner {
+    position: relative;
+    width: 340px;
+    padding: 12px 36px 12px 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--bg) 30%, transparent) 0%,
+      var(--bg) 22%,
+      var(--bg) 78%,
+      color-mix(in srgb, var(--bg) 30%, transparent) 100%
+    );
+    clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 50%, 100% 100%, 0 100%, 14px 50%);
+    overflow: hidden;
+  }
+  .rule {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent) 25%, var(--accent) 75%, transparent);
+  }
+  .rule.top {
+    top: 4px;
+  }
+  .rule.bottom {
+    bottom: 4px;
+  }
+  .shine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    left: 0;
+    background: linear-gradient(
+      115deg,
+      transparent 35%,
+      color-mix(in srgb, var(--fg) 16%, transparent) 50%,
+      transparent 65%
+    );
+    transform: translateX(-120%);
+    animation: qb-shine 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .gem {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 60%, transparent));
+  }
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .label {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--fg) 70%, transparent);
+    line-height: 1;
+  }
+  .live {
+    color: var(--accent);
+    letter-spacing: 2px;
+    animation: qb-pulse 2s ease-in-out infinite;
+  }
+  .time {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sec {
+    font-size: 18px;
+    font-weight: 400;
+    color: color-mix(in srgb, var(--fg) 75%, transparent);
+  }
+  .date {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  @keyframes qb-shine {
+    0% {
+      transform: translateX(-120%);
+    }
+    25%,
+    100% {
+      transform: translateX(300%);
+    }
+  }
+  @keyframes qb-pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".qb")) mountDigital(el, { renderSeconds: (s) => ":" + s });
+</script>

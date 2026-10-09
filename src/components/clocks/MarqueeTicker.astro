@@ -1,0 +1,130 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="mqt"
+  data-clock="marquee-ticker"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="strip">
+    <div class="track">
+      <!-- Four identical sequences (so even the shortest one fills the strip);
+           the track scrolls by exactly one of them for a seamless loop. -->
+      {
+        [0, 1, 2, 3].map((i) => (
+          <div class="seq" aria-hidden={i > 0 ? "true" : undefined}>
+            <span class="dia" aria-hidden="true">◆</span>
+            <span class="hm">--:--</span>
+            <span class="sec" hidden={!opts.seconds}>--</span>
+            <span class="dia" data-with="date" hidden={!opts.date} aria-hidden="true">◆</span>
+            <span class="date" hidden={!opts.date}>--/-- ---</span>
+            <span class="dia" data-with="live" hidden={!opts.live} aria-hidden="true">◆</span>
+            <span class="live" hidden={!opts.live}>NOW ON AIR</span>
+          </div>
+        ))
+      }
+    </div>
+    <div class="tab" aria-hidden="true">TIME</div>
+  </div>
+</div>
+
+<style>
+  .mqt {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Bebas Neue", "Arial Narrow", sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.05em;
+    line-height: 36px;
+  }
+  .strip {
+    position: relative;
+    width: 360px;
+    height: 36px;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .track {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: mqt-scroll 12s linear infinite;
+  }
+  .seq {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 130px;
+    padding-right: 14px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .dia {
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .sec {
+    opacity: 0.7;
+    font-size: 18px;
+    margin-left: -8px;
+  }
+  .live {
+    color: var(--accent);
+  }
+  .tab {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 36px;
+    padding: 0 12px;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 18px;
+    letter-spacing: 0.15em;
+  }
+  .tab::after {
+    content: "";
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 28px;
+    height: 100%;
+    background: linear-gradient(90deg, var(--bg), transparent);
+  }
+  @keyframes mqt-scroll {
+    to {
+      transform: translateX(-25%);
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".mqt")) {
+    // mountDigital updates only the first match; mirror text into the loop copy.
+    const sync = (sel: string) => {
+      const all = el.querySelectorAll<HTMLElement>(sel);
+      for (let i = 1; i < all.length; i++) all[i].textContent = all[0].textContent;
+    };
+    mountDigital(el, {
+      onTick: () => {
+        sync(".hm");
+        sync(".sec");
+        sync(".date");
+      },
+    });
+  }
+</script>

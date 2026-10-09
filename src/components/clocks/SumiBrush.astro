@@ -1,0 +1,138 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="sb"
+  data-clock="sumi-brush"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="stage">
+    <!-- One heavy stroke, thinning to the right, with dry-brush slivers at the tail. -->
+    <svg class="stroke" viewBox="0 0 300 120" width="300" height="120" aria-hidden="true">
+      <path
+        d="M6 58 C14 32 44 24 92 30 C150 37 196 28 240 34 C258 37 270 42 282 50 L278 64 C262 70 240 76 210 78 C160 82 92 86 40 84 C18 83 6 76 6 58 Z"
+      />
+      <path d="M284 44 L298 41 L299 46 L287 51 Z" />
+      <path d="M281 60 L296 58 L297 63 L283 67 Z" />
+      <path d="M276 70 L290 72 L288 77 L274 76 Z" />
+      <path d="M8 36 L14 30 L22 31 L12 42 Z" />
+    </svg>
+    <span class="live" hidden={!opts.live}>LIVE</span>
+    <div class="time">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span><span class="ampm"></span>
+    </div>
+    <div class="foot">
+      <span class="seal" aria-hidden="true">刻</span>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .sb {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Dela Gothic One", sans-serif;
+    color: var(--fg);
+  }
+  .stage {
+    position: relative;
+    width: 300px;
+    height: 120px;
+  }
+  .stroke {
+    position: absolute;
+    inset: 0;
+    display: block;
+    fill: var(--fg);
+    opacity: 0.9;
+    animation: sb-reveal 1.2s cubic-bezier(0.3, 0.8, 0.3, 1) both;
+  }
+  .live {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .time {
+    position: absolute;
+    left: 22px;
+    top: 30px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    color: var(--bg);
+    font-variant-numeric: tabular-nums;
+    animation: sb-fade 0.5s ease-out 0.7s both;
+  }
+  .sec,
+  .ampm {
+    font-size: 16px;
+    opacity: 0.85;
+  }
+  .foot {
+    position: absolute;
+    right: 8px;
+    bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .seal {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: "Dela Gothic One", sans-serif;
+    font-size: 10px;
+    line-height: 1;
+    transform: rotate(-4deg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  .date {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: color-mix(in srgb, var(--fg) 80%, transparent);
+    font-variant-numeric: tabular-nums;
+  }
+  @keyframes sb-reveal {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @keyframes sb-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".sb")) mountDigital(el);
+</script>

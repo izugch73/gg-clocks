@@ -1,0 +1,174 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="fj"
+  data-clock="fuji-sunrise"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="scene">
+    <svg viewBox="0 0 300 170" width="300" height="170" aria-hidden="true">
+      <defs>
+        <linearGradient id="fj-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" class="sky-top" />
+          <stop offset="1" class="sky-bottom" />
+        </linearGradient>
+      </defs>
+      <rect width="300" height="170" fill="url(#fj-sky)" />
+      <g class="sun">
+        <circle cx="190" cy="92" r="40" class="sun-halo" />
+        <circle cx="190" cy="92" r="34" class="sun-disc" />
+      </g>
+      <!-- Two copies of the cloud bands so the drift loops seamlessly. -->
+      <g class="clouds">
+        <rect x="20" y="96" width="90" height="4" rx="2" />
+        <rect x="150" y="112" width="60" height="3" rx="1.5" />
+        <rect x="230" y="104" width="50" height="3" rx="1.5" />
+        <rect x="320" y="96" width="90" height="4" rx="2" />
+        <rect x="450" y="112" width="60" height="3" rx="1.5" />
+        <rect x="530" y="104" width="50" height="3" rx="1.5" />
+      </g>
+      <path class="mtn" d="M-30 170 L96 74 L116 66 L150 62 L184 66 L204 74 L330 170 Z" />
+      <path
+        class="snow"
+        d="M96 74 L116 66 L150 62 L184 66 L204 74 L196 86 L186 80 L174 92 L162 82 L150 94 L138 82 L126 92 L114 80 L104 86 Z"
+      />
+      <path class="ridge" d="M-30 170 L96 74 L150 62 L204 74 L330 170" />
+    </svg>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+    <span class="live" hidden={!opts.live}>LIVE</span>
+    <div class="time">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fj {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Noto Serif JP", serif;
+    color: var(--fg);
+  }
+  .scene {
+    position: relative;
+    width: 300px;
+    height: 170px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  }
+  .scene svg {
+    display: block;
+  }
+  .sky-top {
+    stop-color: var(--bg);
+  }
+  .sky-bottom {
+    stop-color: color-mix(in srgb, var(--bg) 45%, white);
+  }
+  .sun-disc {
+    fill: var(--accent);
+  }
+  .sun-halo {
+    fill: var(--accent);
+    opacity: 0.25;
+  }
+  .sun {
+    animation: fj-bob 10s ease-in-out infinite;
+  }
+  .clouds rect {
+    fill: var(--fg);
+    opacity: 0.28;
+  }
+  .clouds {
+    animation: fj-drift 30s linear infinite;
+  }
+  .mtn {
+    fill: color-mix(in srgb, var(--bg) 55%, black);
+  }
+  .snow {
+    fill: var(--fg);
+  }
+  .ridge {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 0.8;
+    opacity: 0.35;
+  }
+  .date,
+  .live {
+    position: absolute;
+    top: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 60%, black);
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .date {
+    left: 10px;
+  }
+  .live {
+    right: 10px;
+    color: var(--accent);
+    font-size: 9px;
+  }
+  .time {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 40px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 2px;
+    text-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.6),
+      0 0 18px rgba(0, 0, 0, 0.35);
+    font-variant-numeric: tabular-nums;
+  }
+  .sec {
+    font-size: 18px;
+    font-weight: 700;
+    opacity: 0.9;
+  }
+  @keyframes fj-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+  @keyframes fj-drift {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-300px);
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".fj")) mountDigital(el);
+</script>

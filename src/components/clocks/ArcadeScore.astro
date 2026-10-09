@@ -1,0 +1,111 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="as"
+  data-clock="arcade-score"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="board">
+    <div class="top">
+      <span class="oneup">1UP</span>
+      <span class="hi">HI-SCORE</span>
+    </div>
+    <div class="score">
+      <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+    </div>
+    <div class="bottom" hidden={!(opts.date || opts.live || opts.format === "12")}>
+      <span class="date" hidden={!opts.date}>STAGE --/--</span>
+      <span class="ampm"></span>
+      <span class="live" hidden={!opts.live}>● REC</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .as {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Press Start 2P", monospace;
+    color: var(--fg);
+    /* 8-direction 2px black outline + 3px drop: keeps white text readable on light scenes. */
+    --outline:
+      2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+      2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+  }
+  .board {
+    width: 240px;
+    padding: 8px 10px;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-shadow: var(--outline), 3px 3px 0 #000;
+    line-height: 1;
+  }
+  .top,
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 10px;
+    letter-spacing: 1px;
+    gap: 8px;
+  }
+  .oneup {
+    animation: as-blink 1s steps(2, end) infinite;
+  }
+  .hi {
+    color: var(--accent);
+  }
+  .score {
+    font-size: 24px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .sec {
+    font-size: 16px;
+    margin-left: 6px;
+  }
+  .bottom {
+    font-size: 9px;
+  }
+  .ampm {
+    color: color-mix(in srgb, var(--fg) 80%, transparent);
+  }
+  .live {
+    color: var(--accent);
+    margin-left: auto;
+    animation: as-blink 1s steps(2, end) infinite;
+  }
+  @keyframes as-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital, formatDate } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".as")) {
+    const bottom = el.querySelector<HTMLElement>(".bottom");
+    mountDigital(el, {
+      renderDate: (p, lang) => "STAGE " + formatDate(p, lang),
+      onTick: (_p, ctx) => {
+        // Collapse the bottom row (no gap) when date, AM/PM and REC are all absent.
+        const shown = el.dataset.date === "1" || el.dataset.live === "1" || ctx.format === "12";
+        if (bottom) bottom.toggleAttribute("hidden", !shown);
+      },
+    });
+  }
+</script>

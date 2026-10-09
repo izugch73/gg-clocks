@@ -1,0 +1,161 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="gt"
+  data-clock="glitch-type"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="box">
+    <div class="live" hidden={!opts.live}>[ LIVE ]</div>
+    <div class="time">
+      <span class="hm" data-text="--:--">--:--</span><span class="sec" hidden={!opts.seconds}>--</span><span class="ampm"></span>
+    </div>
+    <div class="date" hidden={!opts.date}>--/-- ---</div>
+  </div>
+</div>
+
+<style>
+  .gt {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Rubik Mono One", monospace;
+    color: var(--fg);
+  }
+  .box {
+    background: var(--bg);
+    padding: 6px 10px;
+    text-align: center;
+    line-height: 1;
+  }
+  .live {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    animation: gt-blink 1.2s steps(2, end) infinite;
+  }
+  .time {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .hm {
+    position: relative;
+    display: inline-block;
+    z-index: 0;
+    font-size: 46px;
+    letter-spacing: 1px;
+  }
+  /* Two colour copies sit behind the text at ±1px; during a burst they jump and get sliced. */
+  .hm::before,
+  .hm::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.9;
+  }
+  .hm::before {
+    color: var(--accent);
+    transform: translateX(-1px);
+    animation: gt-cyan 4s steps(1, end) infinite;
+  }
+  .hm::after {
+    color: #ff0055;
+    transform: translateX(1px);
+    animation: gt-pink 4s steps(1, end) infinite;
+  }
+  .sec {
+    font-size: 22px;
+    margin-left: 6px;
+    opacity: 0.8;
+  }
+  .ampm {
+    font-size: 12px;
+    margin-left: 6px;
+    opacity: 0.8;
+  }
+  .ampm:empty {
+    display: none;
+  }
+  .date {
+    margin-top: 8px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    opacity: 0.85;
+  }
+  .date::after {
+    content: "_";
+    animation: gt-blink 1s steps(2, end) infinite;
+  }
+  /* 300ms burst (4 slices) every 4s, then rest at the ±1px chromatic edge */
+  @keyframes gt-cyan {
+    0% {
+      transform: translateX(-3px);
+      clip-path: inset(10% 0 60% 0);
+    }
+    1.9% {
+      transform: translateX(3px);
+      clip-path: inset(55% 0 20% 0);
+    }
+    3.8% {
+      transform: translateX(-4px);
+      clip-path: inset(30% 0 45% 0);
+    }
+    5.6% {
+      transform: translateX(2px);
+      clip-path: inset(70% 0 5% 0);
+    }
+    7.5% {
+      transform: translateX(-1px);
+      clip-path: none;
+    }
+  }
+  @keyframes gt-pink {
+    0% {
+      transform: translateX(3px);
+      clip-path: inset(50% 0 25% 0);
+    }
+    1.9% {
+      transform: translateX(-3px);
+      clip-path: inset(5% 0 75% 0);
+    }
+    3.8% {
+      transform: translateX(4px);
+      clip-path: inset(65% 0 10% 0);
+    }
+    5.6% {
+      transform: translateX(-2px);
+      clip-path: inset(25% 0 50% 0);
+    }
+    7.5% {
+      transform: translateX(1px);
+      clip-path: none;
+    }
+  }
+  @keyframes gt-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".gt")) {
+    const hm = el.querySelector<HTMLElement>(".hm")!;
+    // The pseudo-element copies read their text from data-text.
+    mountDigital(el, { onTick: () => (hm.dataset.text = hm.textContent ?? "") });
+  }
+</script>

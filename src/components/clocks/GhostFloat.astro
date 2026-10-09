@@ -1,0 +1,134 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="ghf"
+  data-clock="ghost-float"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="ghost">
+    <svg viewBox="0 0 160 150" width="176" height="165" aria-hidden="true">
+      <path
+        class="body"
+        d="M15 70 A65 65 0 0 1 145 70 L145 130 Q132 118 119 130 Q106 142 93 130 Q80 118 67 130 Q54 142 41 130 Q28 118 15 130 Z"
+      />
+      <ellipse class="eye" cx="58" cy="56" rx="7" ry="11" />
+      <ellipse class="eye" cx="102" cy="56" rx="7" ry="11" />
+      <ellipse class="blush" cx="42" cy="74" rx="9" ry="4.5" />
+      <ellipse class="blush" cx="118" cy="74" rx="9" ry="4.5" />
+    </svg>
+    <div class="belly">
+      <span class="live" hidden={!opts.live}>LIVE</span>
+      <div class="time">
+        <span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span>
+      </div>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+    </div>
+  </div>
+  <span class="shadow" aria-hidden="true"></span>
+</div>
+
+<style>
+  .ghf {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Reggae One", system-ui, sans-serif;
+    color: var(--fg);
+  }
+  .ghost {
+    position: absolute;
+    left: 2px;
+    top: 0;
+    width: 176px;
+    height: 165px;
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--bg) 60%, transparent));
+    animation: ghf-float 3s ease-in-out infinite alternate;
+  }
+  .ghost svg {
+    display: block;
+  }
+  .body {
+    fill: var(--bg);
+    fill-opacity: 0.85;
+  }
+  .eye {
+    fill: #222;
+  }
+  .blush {
+    fill: var(--accent);
+    opacity: 0.75;
+  }
+  .belly {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    line-height: 1;
+  }
+  .time {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .hm {
+    font-size: 30px;
+  }
+  .sec {
+    font-size: 14px;
+    opacity: 0.75;
+  }
+  .date {
+    font-size: 12px;
+    opacity: 0.85;
+  }
+  .live {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+  }
+  .shadow {
+    position: absolute;
+    left: 50px;
+    bottom: 4px;
+    width: 80px;
+    height: 10px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--fg) 30%, transparent);
+    filter: blur(2px);
+    animation: ghf-shadow 3s ease-in-out infinite alternate;
+  }
+  /* the shadow shrinks as the ghost rises, in sync with the float */
+  @keyframes ghf-float {
+    to {
+      transform: translateY(-6px);
+    }
+  }
+  @keyframes ghf-shadow {
+    to {
+      transform: scaleX(0.8);
+      opacity: 0.6;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".ghf")) mountDigital(el);
+</script>

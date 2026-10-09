@@ -1,0 +1,134 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="vh"
+  data-clock="vhs-timestamp"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="tape">
+    <div class="row top">
+      <span class="play">▶ PLAY</span>
+      <span class="live" hidden={!opts.live}><span class="dot" aria-hidden="true"></span>REC</span>
+    </div>
+    <div class="row date" hidden={!opts.date}>--/-- ---</div>
+    <div class="row time">
+      <span class="ampm"></span><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>:--</span>
+    </div>
+    <div class="tracking" aria-hidden="true"></div>
+  </div>
+</div>
+
+<style>
+  .vh {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "VT323", monospace;
+    color: var(--fg);
+  }
+  .tape {
+    position: relative;
+    min-width: 200px;
+    padding: 6px 12px;
+    background: var(--bg);
+    line-height: 1;
+    text-shadow:
+      -1.5px 0 rgba(255, 40, 40, 0.55),
+      1.5px 0 rgba(40, 140, 255, 0.55),
+      0 0 4px rgba(0, 0, 0, 0.6);
+    animation: vh-jitter 0.2s steps(2, end) infinite;
+  }
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    white-space: nowrap;
+  }
+  .top {
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent);
+  }
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: vh-blink 1s steps(2, end) infinite;
+  }
+  .date {
+    margin-top: 6px;
+    font-size: 22px;
+    letter-spacing: 2px;
+  }
+  .time {
+    margin-top: 4px;
+    gap: 0;
+    font-size: 44px;
+    letter-spacing: 1px;
+  }
+  .time .ampm {
+    font-size: 22px;
+    margin-right: 8px;
+  }
+  .time .ampm:empty {
+    display: none;
+  }
+  .sec {
+    opacity: 0.9;
+  }
+  /* tracking noise: faint lines drifting up through the block */
+  .tracking {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0 18px,
+      rgba(255, 255, 255, 0.1) 18px 19px,
+      transparent 19px 21px,
+      rgba(255, 255, 255, 0.05) 21px 22px,
+      transparent 22px 40px
+    );
+    background-size: 100% 40px;
+    animation: vh-track 6s linear infinite;
+  }
+  @keyframes vh-track {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 0 -120px;
+    }
+  }
+  @keyframes vh-jitter {
+    50% {
+      transform: translateX(1px);
+    }
+  }
+  @keyframes vh-blink {
+    50% {
+      opacity: 0.15;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".vh")) mountDigital(el, { renderSeconds: (s) => ":" + s });
+</script>

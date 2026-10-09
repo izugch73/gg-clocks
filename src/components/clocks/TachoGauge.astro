@@ -1,0 +1,217 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const C = 130;
+// 270° band from 7:30 (gauge 0) clockwise to 4:30 (gauge 12); redline = last quarter (9..12)
+const START = -135;
+const ticks = Array.from({ length: 61 }).map((_, i) => ({
+  angle: START + i * 4.5,
+  major: i % 5 === 0,
+  red: i >= 45,
+  label: i % 5 === 0 ? String(i / 5) : "",
+}));
+const pt = (deg: number, r: number) => ({
+  x: C + Math.sin((deg * Math.PI) / 180) * r,
+  y: C - Math.cos((deg * Math.PI) / 180) * r,
+});
+const arc = (a0: number, a1: number, r: number) => {
+  const p0 = pt(a0, r);
+  const p1 = pt(a1, r);
+  return `M${p0.x} ${p0.y} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${p1.x} ${p1.y}`;
+};
+---
+
+<div
+  class="tg"
+  data-clock="tacho-gauge"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <svg viewBox="0 0 260 260" width="260" height="260" aria-hidden="true">
+    <circle cx={C} cy={C} r="127" class="bezel" />
+    <circle cx={C} cy={C} r="122" class="face" />
+    <path d={arc(START, 135, 116)} class="band" />
+    <path d={arc(67.5, 135, 116)} class="redline" />
+    {ticks.map((t) => (
+      <line
+        x1={C}
+        y1={t.major ? 10 : 14}
+        x2={C}
+        y2="20"
+        class={`tick${t.major ? " major" : ""}${t.red ? " red" : ""}`}
+        transform={`rotate(${t.angle} ${C} ${C})`}
+      />
+    ))}
+    {ticks
+      .filter((t) => t.major)
+      .map((t) => {
+        const p = pt(t.angle, 93);
+        return (
+          <text x={p.x} y={p.y} class={`num${t.red ? " red" : ""}`} text-anchor="middle" dominant-baseline="central">
+            {t.label}
+          </text>
+        );
+      })}
+
+    <g class="hand-h">
+      <polygon points="130,72 135,130 125,130" class="needle" />
+    </g>
+    <g class="hand-m">
+      <polygon points="130,40 133,130 127,130" class="needle" />
+    </g>
+    <g class="hand-s sec" {...(opts.seconds ? {} : { hidden: true })}>
+      <line x1={C} y1="142" x2={C} y2="32" class="needle-sec" />
+      <circle cx={C} cy="146" r="4" class="counter" />
+    </g>
+    <circle cx={C} cy={C} r="7" class="pin" />
+    <circle cx={C} cy={C} r="2.5" class="pin-center" />
+  </svg>
+  <div class="panel">
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+    <span class="readout"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></span>
+    <span class="live" hidden={!opts.live}>● LIVE</span>
+  </div>
+</div>
+
+<style>
+  .tg {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Oswald", system-ui, sans-serif;
+  }
+  .tg svg {
+    display: block;
+  }
+  .bezel {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 2;
+  }
+  .face {
+    fill: var(--bg);
+  }
+  .band {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1;
+    opacity: 0.35;
+  }
+  .redline {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 7;
+    opacity: 0.85;
+  }
+  .tick {
+    stroke: var(--fg);
+    stroke-width: 1.2;
+    opacity: 0.55;
+  }
+  .tick.major {
+    stroke-width: 2.5;
+    opacity: 1;
+  }
+  .tick.red {
+    stroke: var(--accent);
+    stroke-width: 2;
+    opacity: 1;
+  }
+  .tick.major.red {
+    stroke-width: 3.5;
+  }
+  .num {
+    font-family: "Oswald", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    fill: var(--fg);
+  }
+  .num.red {
+    fill: var(--accent);
+  }
+  .needle {
+    fill: var(--fg);
+  }
+  .needle-sec {
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+  .counter {
+    fill: var(--accent);
+  }
+  .pin {
+    fill: var(--fg);
+  }
+  .pin-center {
+    fill: var(--accent);
+  }
+  .hand-h,
+  .hand-m,
+  .hand-s {
+    transform-origin: 130px 130px;
+    transition: transform 0.25s cubic-bezier(0.4, 1.8, 0.6, 1);
+  }
+  .hand-s {
+    transition: transform 0.15s cubic-bezier(0.4, 2.2, 0.6, 1);
+  }
+  /* Digital readout in the empty lower sector of the gauge */
+  .panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 158px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: var(--fg);
+    line-height: 1;
+    pointer-events: none;
+  }
+  .date {
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.75;
+  }
+  .readout {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .readout .sec {
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 0.8;
+  }
+  .live {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+</style>
+
+<script>
+  import { mountAnalog, mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".tg")) {
+    mountAnalog(el);
+    mountDigital(el);
+  }
+</script>

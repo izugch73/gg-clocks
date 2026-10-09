@@ -6,6 +6,7 @@ const { opts } = Astro.props;
 
 <div
   class="ad"
+  data-clock="analog-dot"
   data-seconds={opts.seconds ? "1" : "0"}
   data-tz={opts.tz}
   style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}

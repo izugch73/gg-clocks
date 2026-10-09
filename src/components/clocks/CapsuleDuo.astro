@@ -1,0 +1,114 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="cpd"
+  data-clock="capsule-duo"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="pill big">
+    <span class="gloss" aria-hidden="true"></span>
+    <span class="live" hidden={!opts.live}>LIVE</span>
+    <span class="hm">--:--</span>
+  </div>
+  <div class="pill small">
+    <span class="gloss" aria-hidden="true"></span>
+    <span class="sec" hidden={!opts.seconds}>--</span>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+  </div>
+</div>
+
+<style>
+  .cpd {
+    display: flex;
+    align-items: center;
+    padding-bottom: 4px; /* room for the hard shadow */
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Fredoka", system-ui, sans-serif;
+    font-weight: 700;
+    color: var(--fg);
+  }
+  .pill {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 60px;
+    box-sizing: border-box;
+    padding: 0 22px;
+    border: 3px solid var(--fg);
+    border-radius: 999px;
+    box-shadow: 0 4px 0 var(--fg);
+    line-height: 1;
+  }
+  .big {
+    background: var(--bg);
+    font-size: 36px;
+    font-variant-numeric: tabular-nums;
+    z-index: 1;
+  }
+  .small {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    height: 48px;
+    padding: 0 16px 0 30px;
+    margin-left: -18px; /* overlaps the big pill's right end */
+    background: var(--accent);
+    color: #fff;
+    font-size: 22px;
+  }
+  /* The small capsule only exists while it has something to show. */
+  .small:not(:has(.sec:not([hidden]), .date:not([hidden]))) {
+    display: none;
+  }
+  .small .date {
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .small .sec:not([hidden]) + .date:not([hidden]) {
+    margin-top: 1px;
+  }
+  /* glossy toy highlight */
+  .gloss {
+    position: absolute;
+    left: 12px;
+    top: 7px;
+    width: 26px;
+    height: 9px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .small .gloss {
+    left: 24px;
+    top: 5px;
+    width: 18px;
+    height: 7px;
+  }
+  .live {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".cpd")) mountDigital(el);
+</script>

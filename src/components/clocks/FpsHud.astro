@@ -1,0 +1,161 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+const bars = Array.from({ length: 10 }, (_, i) => i);
+---
+
+<div
+  class="fh"
+  data-clock="fps-hud"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="panel">
+    <span class="edge" aria-hidden="true"></span>
+    <span class="corner tr" aria-hidden="true"></span>
+    <span class="corner bl" aria-hidden="true"></span>
+    <div class="main">
+      <span class="hm">--:--</span>
+      <span class="ammo" data-with="sec" hidden={!opts.seconds} aria-hidden="true">
+        {bars.map(() => <i></i>)}
+      </span>
+    </div>
+    <div class="sub">
+      <span class="sec" hidden={!opts.seconds}>/ --</span>
+      <span class="ampm"></span>
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+      <span class="live" hidden={!opts.live}>● LIVE</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fh {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Oswald", "Arial Narrow", sans-serif;
+    color: var(--fg);
+  }
+  .panel {
+    position: relative;
+    width: 250px;
+    padding: 6px 14px 8px 16px;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .edge {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
+  }
+  /* Thin bracket lines on the two un-clipped corners. */
+  .corner {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 1px solid color-mix(in srgb, var(--fg) 45%, transparent);
+  }
+  .corner.tr {
+    top: 3px;
+    right: 3px;
+    border-left: 0;
+    border-bottom: 0;
+  }
+  .corner.bl {
+    bottom: 3px;
+    left: 5px;
+    border-right: 0;
+    border-top: 0;
+  }
+  .main {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .hm {
+    font-size: 48px;
+    font-weight: 700;
+    font-style: italic;
+    line-height: 1;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .ammo {
+    display: flex;
+    gap: 3px;
+    padding-bottom: 6px;
+  }
+  .ammo i {
+    display: block;
+    width: 5px;
+    height: 14px;
+    transform: skewX(-18deg);
+    background: color-mix(in srgb, var(--fg) 22%, transparent);
+  }
+  .ammo i.on {
+    background: var(--accent);
+    box-shadow: 0 0 4px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  .sub {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-top: 3px;
+    border-top: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    line-height: 1;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .sec {
+    color: color-mix(in srgb, var(--fg) 75%, transparent);
+  }
+  .ampm {
+    color: var(--accent);
+  }
+  .date {
+    color: color-mix(in srgb, var(--fg) 75%, transparent);
+  }
+  .live {
+    margin-left: auto;
+    color: var(--accent);
+    font-weight: 700;
+    animation: fh-blink 1.6s steps(2, end) infinite;
+  }
+  @keyframes fh-blink {
+    50% {
+      opacity: 0.35;
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".fh")) {
+    const bars = el.querySelectorAll<HTMLElement>(".ammo i");
+    mountDigital(el, {
+      renderSeconds: (s) => "/ " + s,
+      onTick: (p) => {
+        // One bar per 6 seconds, "reloading" at the top of each minute.
+        const lit = Math.floor(p.second / 6) + 1;
+        bars.forEach((b, i) => b.classList.toggle("on", i < lit));
+      },
+    });
+  }
+</script>

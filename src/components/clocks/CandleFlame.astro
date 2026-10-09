@@ -1,0 +1,171 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+---
+
+<div
+  class="cf"
+  data-clock="candle-flame"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="flame" aria-hidden="true">
+    <span class="outer"></span>
+    <span class="inner"></span>
+  </div>
+  <span class="wick" aria-hidden="true"></span>
+  <div class="candle">
+    <span class="drip d1" aria-hidden="true"></span>
+    <span class="drip d2" aria-hidden="true"></span>
+    <span class="drip d3" aria-hidden="true"></span>
+    <span class="live" hidden={!opts.live}>LIVE</span>
+    <span class="time"><span class="hm">--:--</span><span class="sec" hidden={!opts.seconds}>--</span></span>
+    <span class="date" hidden={!opts.date}>--/-- ---</span>
+  </div>
+</div>
+
+<style>
+  .cf {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 140px;
+    height: 220px;
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "Zen Old Mincho", serif;
+  }
+  /* Flame: two teardrops (rotated squares with one sharp corner) that flicker as a unit */
+  .flame {
+    position: relative;
+    width: 30px;
+    height: 44px;
+    margin-bottom: -4px;
+    transform-origin: 50% 100%;
+    animation: cf-flicker 0.8s ease-in-out infinite alternate;
+  }
+  .flame span {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    border-radius: 0 50% 50% 50%;
+    transform: translateX(-50%) rotate(45deg);
+    transform-origin: center;
+  }
+  .outer {
+    width: 26px;
+    height: 26px;
+    bottom: 4px;
+    background: radial-gradient(circle at 50% 70%, var(--accent) 0%, color-mix(in srgb, var(--accent) 75%, transparent) 60%, transparent 100%);
+    box-shadow: 0 0 22px 8px color-mix(in srgb, var(--accent) 40%, transparent);
+    opacity: 0.95;
+  }
+  .inner {
+    width: 13px;
+    height: 13px;
+    bottom: 6px;
+    background: radial-gradient(circle at 50% 70%, white 0%, color-mix(in srgb, var(--accent) 35%, white) 70%, transparent 100%);
+  }
+  .wick {
+    width: 2px;
+    height: 7px;
+    background: color-mix(in srgb, var(--fg) 85%, black);
+    border-radius: 1px;
+  }
+  .candle {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 96px;
+    height: 150px;
+    border-radius: 48px / 8px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--bg) 72%, black) 0%,
+      var(--bg) 38%,
+      color-mix(in srgb, var(--bg) 90%, white) 52%,
+      var(--bg) 70%,
+      color-mix(in srgb, var(--bg) 70%, black) 100%
+    );
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    color: var(--fg);
+  }
+  .drip {
+    position: absolute;
+    top: 2px;
+    width: 10px;
+    background: color-mix(in srgb, var(--bg) 92%, white);
+    border-radius: 0 0 6px 6px;
+    box-shadow: inset -2px 0 2px rgba(0, 0, 0, 0.12);
+  }
+  .d1 {
+    left: 14px;
+    height: 26px;
+  }
+  .d2 {
+    left: 46px;
+    height: 36px;
+    width: 8px;
+  }
+  .d3 {
+    right: 16px;
+    height: 18px;
+  }
+  .live {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .time {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    /* carved look: light edge below, shadow above */
+    text-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.55),
+      0 -1px 0 rgba(0, 0, 0, 0.25);
+  }
+  .time .sec {
+    font-size: 13px;
+    opacity: 0.8;
+  }
+  .date {
+    font-size: 12px;
+    letter-spacing: 1px;
+    opacity: 0.85;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+  @keyframes cf-flicker {
+    0% {
+      transform: scale(1, 1) skewX(0deg);
+    }
+    40% {
+      transform: scale(0.96, 1.05) skewX(2deg);
+    }
+    100% {
+      transform: scale(0.92, 1.08) skewX(-3deg);
+    }
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".cf")) mountDigital(el);
+</script>

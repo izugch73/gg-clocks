@@ -1,0 +1,160 @@
+---
+import type { ClockOptions } from "../../lib/options";
+type Props = { opts: ClockOptions };
+const { opts } = Astro.props;
+// One sine wavelength is 80px; the path covers the 320px screen.
+const half = "q20 -46 40 0 q20 46 40 0";
+const wave = `M0 88 ${half} ${half} ${half} ${half}`;
+---
+
+<div
+  class="osc"
+  data-clock="oscilloscope-trace"
+  data-format={opts.format}
+  data-seconds={opts.seconds ? "1" : "0"}
+  data-date={opts.date ? "1" : "0"}
+  data-live={opts.live ? "1" : "0"}
+  data-tz={opts.tz}
+  data-lang={opts.lang}
+  style={`--fg:${opts.fg};--bg:${opts.bg};--accent:${opts.accent};--scale:${opts.scale};`}
+>
+  <div class="screen">
+    <svg class="wave" viewBox="0 0 320 140" aria-hidden="true">
+      <path class="base" d={wave} />
+      <path class="trace" d={wave} />
+    </svg>
+    <div class="head">
+      <span class="ch">CH1 2V/div</span>
+      <span class="live" hidden={!opts.live}>● REC</span>
+    </div>
+    <div class="time"><span class="hm">--:--</span><span class="ampm"></span></div>
+    <div class="foot">
+      <span class="date" hidden={!opts.date}>--/-- ---</span>
+      <span class="secbox" data-with="sec" hidden={!opts.seconds}>SEC <span class="sec">--</span></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .osc {
+    transform: scale(var(--scale, 1));
+    transform-origin: center;
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--fg);
+  }
+  .screen {
+    position: relative;
+    width: 320px;
+    height: 140px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 2px solid color-mix(in srgb, var(--fg) 55%, transparent);
+    overflow: hidden;
+    background:
+      linear-gradient(color-mix(in srgb, var(--fg) 10%, transparent) 1px, transparent 1px) 0 0 / 20px 20px,
+      linear-gradient(90deg, color-mix(in srgb, var(--fg) 10%, transparent) 1px, transparent 1px) 0 0 / 20px 20px,
+      var(--bg);
+    box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.5);
+  }
+  /* graticule centre lines */
+  .screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(color-mix(in srgb, var(--fg) 22%, transparent), color-mix(in srgb, var(--fg) 22%, transparent)) 0 87px / 100% 1px no-repeat,
+      linear-gradient(color-mix(in srgb, var(--fg) 22%, transparent), color-mix(in srgb, var(--fg) 22%, transparent)) 159px 0 / 1px 100% no-repeat;
+    pointer-events: none;
+  }
+  [hidden] {
+    display: none !important;
+  }
+  .wave {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke-linecap: round;
+  }
+  .base {
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    opacity: 0.35;
+  }
+  .trace {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    stroke-dasharray: 150 210;
+    filter: drop-shadow(0 0 4px var(--accent));
+    animation: osc-scroll 3s linear infinite;
+  }
+  @keyframes osc-scroll {
+    to {
+      stroke-dashoffset: -360;
+    }
+  }
+  .head {
+    position: absolute;
+    top: 8px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    letter-spacing: 1px;
+    opacity: 0.8;
+  }
+  .live {
+    color: var(--accent);
+    opacity: 1;
+    animation: osc-blink 2s steps(1, end) infinite;
+  }
+  @keyframes osc-blink {
+    50% {
+      opacity: 0.4;
+    }
+  }
+  .time {
+    position: absolute;
+    top: 22px;
+    left: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 8px color-mix(in srgb, var(--fg) 50%, transparent);
+    white-space: nowrap;
+  }
+  .ampm {
+    font-size: 12px;
+  }
+  .ampm:empty {
+    display: none;
+  }
+  .foot {
+    position: absolute;
+    bottom: 8px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .secbox {
+    margin-left: auto;
+    color: var(--accent);
+  }
+  .sec {
+    font-weight: 700;
+  }
+</style>
+
+<script>
+  import { mountDigital } from "../../lib/clock-runtime";
+  for (const el of document.querySelectorAll<HTMLElement>(".osc")) mountDigital(el);
+</script>
